@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MockDock — App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:       #F1F3F5;
+      --bg-warm:  #FAF9F6;
+      --card:     #FFFFFF;
+      --txt:      #212529;
+      --txt2:     #757575;
+      --input-bg: #E9F2F7;
+      --purple:   #9C8DD4;
+      --purple-btn: #A99DD8;
+      --pill-bg:  #E2E1E6;
+      --red:      #E77A73;
+      --green:    #4ADE80;
+      --shadow:   0 4px 12px rgba(0,0,0,0.05);
+      --bor:      rgba(0,0,0,0.06);
+      --f: 'Inter', sans-serif;
+      --m: 'Fira Code', monospace;
+    }
+
+    html { font-size: 14px; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--f); min-height: 100vh; }
+
+    /* NAV */
+    .topnav { background: var(--bg); border-bottom: 1px solid var(--bor); height: 46px; display: flex; align-items: center; padding: 0 24px; gap: 12px; position: sticky; top: 0; z-index: 100; }
+    .logo { font-size: .9rem; font-weight: 700; color: var(--txt); text-decoration: none; display: flex; align-items: center; }
+    .logo-dot { color: var(--red); }
+    .nav-sep { width: 1px; height: 20px; background: var(--bor); }
+    .nav-pill { background: var(--pill-bg); border: none; color: var(--txt2); padding: 5px 14px; border-radius: 100px; font-family: var(--f); font-size: .72rem; font-weight: 500; cursor: pointer; }
+    .nav-right { margin-left: auto; display: flex; gap: 8px; }
+    .nav-btn { background: var(--pill-bg); border: none; color: var(--txt2); padding: 5px 14px; border-radius: 100px; font-family: var(--f); font-size: .72rem; font-weight: 500; cursor: pointer; transition: all .2s; text-decoration: none; display: flex; align-items: center; gap: 5px; }
+    .nav-btn:hover { background: #d8d7de; color: var(--txt); }
+
+    /* HERO STRIP */
+    .hero-strip { background: linear-gradient(180deg,#F1F3F5 0%,#F7F6F2 100%); padding: 28px 32px 24px; display: grid; grid-template-columns: 1fr 220px 1fr; align-items: center; min-height: 155px; border-bottom: 1px solid var(--bor); }
+    .hero-strip-left .hero-eyebrow { font-family: var(--m); font-size: .6rem; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+    .hero-strip-left .hero-title { font-size: 2.6rem; font-weight: 300; color: var(--txt); letter-spacing: -.04em; line-height: 1.1; margin-bottom: 10px; }
+    .hero-strip-left .hero-sub { font-family: var(--m); font-size: .65rem; color: var(--txt2); letter-spacing: .03em; }
+    .hero-strip-center { display: flex; justify-content: center; align-items: center; }
+    .spline-wrap { position: relative; width: 220px; height: 170px; display: flex; justify-content: center; align-items: flex-end; }
+    .spline-shadow { position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); width: 120px; height: 18px; background: radial-gradient(ellipse,rgba(156,141,212,.35) 0%,rgba(156,141,212,.08) 60%,transparent 100%); border-radius: 50%; z-index: 0; filter: blur(5px); }
+    .hero-strip-right { display: flex; align-items: flex-start; gap: 32px; justify-content: flex-end; padding-top: 8px; }
+    .stat-val { font-size: 1.5rem; font-weight: 300; color: var(--txt); letter-spacing: -.03em; line-height: 1; }
+    .stat-lbl { font-family: var(--m); font-size: .52rem; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+
+    /* ═══ WIZARD WRAPPER ═══ */
+    .wizard-outer {
+      min-height: calc(100vh - 46px - 90px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 36px 20px 40px;
+    }
+
+    /* Progress bar */
+    .wiz-progress {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 32px;
+      width: 100%;
+      max-width: 560px;
+    }
+    .wiz-step-dot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      flex: 1;
+    }
+    .wiz-dot-circle {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--pill-bg);
+      background: var(--card);
+      color: var(--txt2);
+      font-size: .68rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .35s;
+      z-index: 1;
+      position: relative;
+    }
+    .wiz-dot-label {
+      font-size: .56rem;
+      font-weight: 600;
+      color: var(--txt2);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      transition: color .3s;
+    }
+    .wiz-step-dot.active .wiz-dot-circle {
+      border-color: var(--purple);
+      background: var(--purple);
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(156,141,212,.18);
+    }
+    .wiz-step-dot.active .wiz-dot-label { color: var(--purple); }
+    .wiz-step-dot.done .wiz-dot-circle {
+      border-color: var(--purple);
+      background: rgba(156,141,212,.12);
+      color: var(--purple);
+    }
+    .wiz-step-dot.done .wiz-dot-label { color: var(--purple); }
+    .wiz-connector {
+      flex: 1;
+      height: 2px;
+      background: var(--pill-bg);
+      margin-bottom: 22px;
+      transition: background .4s;
+      position: relative;
+    }
+    .wiz-connector.done { background: rgba(156,141,212,.4); }
+
+    /* Wizard card */
+    .wiz-card {
+      background: var(--card);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.08);
+      border: 1px solid rgba(0,0,0,.05);
+      width: 100%;
+      max-width: 560px;
+      overflow: hidden;
+      display: none;
+      animation: wiz-in .35s cubic-bezier(.4,0,.2,1);
+    }
+    .wiz-card.active { display: block; }
+    @keyframes wiz-in {
+      from { opacity:0; transform: translateY(18px) scale(.98); }
+      to   { opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    .wiz-card-head {
+      padding: 22px 26px 16px;
+      border-bottom: 1px solid rgba(0,0,0,.05);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .wiz-card-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: rgba(156,141,212,.18);
+      border: 1.5px solid rgba(156,141,212,.35);
+      color: var(--purple);
+      font-size: .68rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .wiz-card-title { font-size: 1rem; font-weight: 600; color: var(--txt); }
+    .wiz-card-sub   { font-size: .7rem; color: var(--txt2); margin-top: 2px; }
+
+    .wiz-card-body { padding: 22px 26px; }
+
+    /* Nav buttons */
+    .wiz-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 26px 20px;
+      border-top: 1px solid rgba(0,0,0,.05);
+    }
+    .wiz-nav-info {
+      font-family: var(--m);
+      font-size: .6rem;
+      color: var(--txt2);
+      letter-spacing: .06em;
+    }
+    .btn-wiz-next {
+      background: var(--purple-btn);
+      color: #fff;
+      border: none;
+      padding: 9px 22px;
+      border-radius: 100px;
+      font-family: var(--f);
+      font-weight: 600;
+      font-size: .78rem;
+      cursor: pointer;
+      transition: all .25s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-wiz-next:hover { background: #8a7bc7; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(156,141,212,.4); }
+    .btn-wiz-back {
+      background: var(--pill-bg);
+      border: none;
+      color: var(--txt2);
+      padding: 9px 18px;
+      border-radius: 100px;
+      font-family: var(--f);
+      font-size: .78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn-wiz-back:hover { background: #d8d7de; color: var(--txt); }
+    .btn-wiz-back.invisible { visibility: hidden; pointer-events: none; }
+
+    /* Output step — full width */
+    .wiz-card.wiz-output {
+      max-width: 1360px;
+    }
+    .wiz-card.wiz-output .wiz-card-body {
+      padding: 0;
+    }
+
+    /* FIELDS (same as before) */
+    .field { margin-bottom: 13px; }
+    .field-lbl { font-family: var(--f); font-size: .58rem; font-weight: 700; color: var(--txt); letter-spacing: .07em; text-transform: uppercase; display: block; margin-bottom: 5px; }
+    .field-hint { font-size: .62rem; color: var(--txt2); margin-top: 3px; }
+    .inp { width: 100%; background: var(--input-bg); border: none; border-radius: 8px; padding: 9px 12px; color: var(--txt); font-family: var(--f); font-size: .76rem; outline: none; transition: box-shadow .2s; }
+    .inp:focus { box-shadow: 0 0 0 2.5px rgba(156,141,212,.4); }
+    .inp::placeholder { color: #aab; }
+    .code-inp { width: 100%; background: #E9F2F7; border: none; border-radius: 8px; padding: 10px 12px; color: #4a5568; font-family: var(--m); font-size: .72rem; line-height: 1.8; resize: vertical; outline: none; }
+    .code-inp:focus { box-shadow: 0 0 0 2.5px rgba(156,141,212,.4); }
+    .code-inp::placeholder { color: #aab; }
+    .inp-row { display: flex; gap: 7px; align-items: center; }
+    .inp-row .inp { flex: 1; }
+
+    /* BUTTONS */
+    .btn-primary { width: 100%; background: var(--purple-btn); color: #fff; border: none; padding: 10px 18px; border-radius: 100px; font-family: var(--f); font-weight: 500; font-size: .78rem; cursor: pointer; transition: all .25s; margin-top: 4px; }
+    .btn-primary:hover { background: #8a7bc7; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(156,141,212,.4); }
+    .btn-primary:disabled { opacity: .5; }
+    .btn-ghost { background: var(--pill-bg); border: none; color: var(--txt2); padding: 7px 14px; border-radius: 8px; font-family: var(--f); font-size: .72rem; font-weight: 500; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-ghost:hover { background: #d8d7de; color: var(--txt); }
+    .btn-ghost.hidden { display: none; }
+    .btn-ai { background: rgba(156,141,212,.12); border: 1px solid rgba(156,141,212,.3); color: var(--purple); padding: 6px 11px; border-radius: 7px; font-family: var(--f); font-size: .68rem; font-weight: 600; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-ai:hover { background: rgba(156,141,212,.22); }
+    .btn-ai:disabled { opacity: .5; }
+    .btn-add { width: 100%; background: transparent; border: 1.5px dashed rgba(156,141,212,.4); color: var(--purple); padding: 8px 14px; border-radius: 9px; font-family: var(--f); font-size: .74rem; font-weight: 500; cursor: pointer; transition: all .2s; }
+    .btn-add:hover { background: rgba(156,141,212,.06); }
+    .btn-open { background: var(--pill-bg); border: none; color: var(--txt2); padding: 7px 12px; border-radius: 8px; font-size: .72rem; font-weight: 500; cursor: pointer; transition: all .2s; white-space: nowrap; }
+    .btn-open:hover { background: #d8d7de; color: var(--txt); }
+    .btn-copy { background: var(--pill-bg); border: none; color: var(--txt2); padding: 4px 10px; border-radius: 6px; font-family: var(--m); font-size: .62rem; cursor: pointer; transition: all .2s; }
+    .btn-copy:hover { background: var(--purple); color: #fff; }
+
+    /* TOGGLE */
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background: #ddd; border-radius: 100px; transition: .3s; }
+    .slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .3s; }
+    input:checked + .slider { background: var(--purple); }
+    input:checked + .slider::before { transform: translateX(16px); }
+    .toggle-lbl { font-size: .7rem; font-weight: 600; color: var(--txt2); letter-spacing: .04em; text-transform: uppercase; }
+    .auth-inner { background: var(--input-bg); border-radius: 10px; padding: 12px; }
+
+    /* CHIPS */
+    .resource-chip { display: inline-flex; align-items: center; gap: 5px; background: rgba(156,141,212,.1); border: 1px solid rgba(156,141,212,.25); border-radius: 100px; padding: 3px 10px; font-family: var(--m); font-size: .66rem; color: var(--purple); margin: 3px; animation: chipIn .3s ease; }
+    @keyframes chipIn { from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)} }
+    .resource-card { display: flex; align-items: center; gap: 9px; background: rgba(156,141,212,.07); border: 1px solid rgba(156,141,212,.18); border-radius: 8px; padding: 8px 12px; margin-bottom: 5px; }
+    .resource-card-name { font-family: var(--m); font-size: .76rem; font-weight: 500; color: var(--purple); }
+    .resource-card-meta { font-family: var(--m); font-size: .68rem; color: var(--txt2); }
+    .btn-remove { background: transparent; border: none; color: var(--red); cursor: pointer; font-size: .78rem; margin-left: auto; }
+
+    /* STEP BLOCKS */
+    .step-block { animation: stepIn .3s ease; }
+    .step-block.hidden { display: none !important; }
+    @keyframes stepIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+
+    /* ERRORS */
+    .error-msg { background: rgba(231,122,115,.07); border: 1px solid rgba(231,122,115,.25); border-radius: 8px; padding: 8px 12px; font-family: var(--m); font-size: .7rem; color: var(--red); margin-bottom: 10px; }
+
+    /* PROTECTED ROUTES */
+    .protected-route-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-family: var(--m); font-size: .7rem; color: var(--txt2); }
+    .protected-route-item input[type="checkbox"] { accent-color: var(--purple); cursor: pointer; }
+
+    /* DIVIDER */
+    .divider { height: 1px; background: rgba(0,0,0,.05); margin: 12px 0; }
+
+    /* SCHEMA TABS */
+    .schema-mode-tabs { display: flex; gap: 0; margin-bottom: 12px; background: var(--input-bg); border-radius: 10px; padding: 3px; }
+    .schema-mode-tab { flex: 1; border: none; background: transparent; color: var(--txt2); padding: 7px 10px; border-radius: 8px; font-family: var(--f); font-size: .68rem; font-weight: 600; cursor: pointer; transition: all .22s; display: flex; align-items: center; justify-content: center; gap: 5px; letter-spacing: .02em; }
+    .schema-mode-tab.active { background: #fff; color: var(--purple); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .schema-mode-tab:not(.active):hover { color: var(--txt); }
+    .schema-panel { display: none; }
+    .schema-panel.active { display: block; animation: stepIn .25s ease; }
+
+    /* SWAGGER */
+    .swagger-textarea { width: 100%; background: #FFFFFF; border: none; border-radius: 8px; padding: 10px 12px; color: #cdd6f4; font-family: var(--m); font-size: .68rem; line-height: 1.8; resize: vertical; outline: none; min-height: 130px; }
+    .swagger-textarea:focus { box-shadow: 0 0 0 2.5px rgba(156,141,212,.4); }
+    .swagger-textarea::placeholder { color: #4a4a6a; }
+    .swagger-parse-btn { width: 100%; background: rgba(156,141,212,.12); border: 1.5px solid rgba(156,141,212,.3); color: var(--purple); padding: 8px 14px; border-radius: 8px; font-family: var(--f); font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 7px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .swagger-parse-btn:hover { background: rgba(156,141,212,.22); }
+    .swagger-parse-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .swagger-preview { margin-top: 10px; background: rgba(156,141,212,.05); border: 1px solid rgba(156,141,212,.18); border-radius: 8px; padding: 10px 12px; animation: stepIn .25s ease; }
+    .swagger-preview-title { font-family: var(--f); font-size: .56rem; font-weight: 700; color: var(--txt2); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 7px; }
+    .swagger-field-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,.04); font-family: var(--m); font-size: .65rem; }
+    .swagger-field-row:last-child { border-bottom: none; }
+    .swagger-field-name { color: var(--purple); font-weight: 500; flex: 1; }
+    .swagger-field-type { color: var(--txt2); }
+    .swagger-field-req { font-size: .54rem; background: rgba(231,122,115,.1); color: var(--red); border-radius: 4px; padding: 1px 5px; }
+    .swagger-field-opt { font-size: .54rem; background: rgba(156,141,212,.1); color: var(--purple); border-radius: 4px; padding: 1px 5px; }
+    .swagger-extracted-routes { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,.05); }
+    .swagger-route-chip { display: inline-flex; align-items: center; gap: 4px; background: rgba(5,150,105,.07); border: 1px solid rgba(5,150,105,.2); border-radius: 100px; padding: 2px 9px; font-family: var(--m); font-size: .62rem; color: #059669; margin: 2px; }
+    .swagger-status { font-family: var(--m); font-size: .62rem; margin-top: 6px; min-height: 14px; padding: 2px 0; }
+    .swagger-status.ok  { color: #059669; }
+    .swagger-status.err { color: var(--red); }
+    .swagger-status.info { color: var(--txt2); }
+    .swagger-apply-btn { width: 100%; background: var(--purple-btn); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-family: var(--f); font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 8px; }
+    .swagger-apply-btn:hover { background: #8a7bc7; }
+
+    /* OUTPUT GRID (inside wiz-output card) */
+    .out-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; padding: 20px; }
+    .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); border: 1px solid rgba(0,0,0,.04); overflow: hidden; }
+    .card-head { padding: 16px 18px 10px; display: flex; align-items: center; gap: 10px; }
+    .card-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(156,141,212,.18); border: 1.5px solid rgba(156,141,212,.35); color: var(--purple); font-size: .65rem; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .card-title { font-size: .84rem; font-weight: 600; color: var(--txt); }
+    .card-sub { font-size: .68rem; color: var(--txt2); margin-top: 1px; }
+    .card-body { padding: 4px 18px 18px; }
+
+    /* OUTPUT styles (kept from original) */
+    .out-lbl { font-family: var(--f); font-size: .56rem; font-weight: 700; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .out-lbl::before { content: ''; width: 12px; height: 1px; background: var(--purple); }
+    .code-val { font-family: var(--m); font-size: .74rem; color: var(--purple); word-break: break-all; }
+    .code-row { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+    .out-primary { background: rgba(156,141,212,.06); border: 1px solid rgba(156,141,212,.15); border-radius: 10px; padding: 13px; }
+    .session-note { font-family: var(--m); font-size: .6rem; color: var(--txt2); margin-top: 8px; line-height: 1.7; }
+    .expiry-val { font-family: var(--m); font-size: .8rem; color: #d97706; }
+    .schema-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .schema-chip { background: rgba(156,141,212,.08); border: 1px solid rgba(156,141,212,.18); border-radius: 5px; padding: 2px 8px; font-family: var(--m); font-size: .64rem; color: var(--purple); }
+    .ep-snippet { background: #FFFFFF; border-radius: 7px; padding: 10px 12px; font-family: var(--m); font-size: .66rem; line-height: 1.9; color: #cdd6f4; overflow-x: auto; margin-bottom: 8px; white-space: pre; }
+    .method-badge { font-size: .58rem; font-weight: 800; letter-spacing: .05em; padding: 3px 9px; border-radius: 5px; flex-shrink: 0; font-family: var(--m); }
+    .method-GET    { color: #059669; background: rgba(5,150,105,.12); }
+    .method-POST   { color: #2563eb; background: rgba(37,99,235,.12); }
+    .method-PUT    { color: #ea580c; background: rgba(234,88,12,.12); }
+    .method-DELETE { color: #e63946; background: rgba(231,122,115,.12); }
+    .snippet-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+    .stab { background: var(--pill-bg); border: none; color: var(--txt2); padding: 4px 12px; border-radius: 6px; font-family: var(--m); font-size: .62rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .stab.active { background: #FFFFFF; color: #cdd6f4; }
+    .stab-panel { display: none; }
+    .stab-panel.active { display: block; }
+    .select-inp { background: var(--input-bg); border: none; border-radius: 8px; padding: 8px 11px; color: var(--txt); font-family: var(--m); font-size: .72rem; outline: none; cursor: pointer; width: 100%; }
+    .tester-row { margin-bottom: 10px; }
+    .tester-resp { margin-top: 11px; background: #FFFFFF; border-radius: 9px; padding: 12px; animation: stepIn .3s ease; }
+    .resp-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .resp-lbl { font-family: var(--m); font-size: .54rem; color: #aaa; letter-spacing: .1em; text-transform: uppercase; }
+    .status-badge { font-family: var(--m); font-size: .64rem; padding: 2px 8px; border-radius: 4px; }
+    .status-2xx { color: #4ade80; background: rgba(74,222,128,.12); }
+    .status-4xx { color: #fbbf24; background: rgba(251,191,36,.12); }
+    .status-5xx { color: var(--red); background: rgba(231,122,115,.12); }
+    .resp-body { font-family: var(--m); font-size: .7rem; color: #a6e3a1; line-height: 1.8; white-space: pre-wrap; word-break: break-all; }
+    .fetch-snippet { background: #FFFFFF; border-radius: 8px; padding: 12px; font-family: var(--m); font-size: .68rem; line-height: 1.8; color: #cdd6f4; margin-bottom: 8px; overflow-x: auto; }
+    .logs-empty { font-family: var(--m); font-size: .7rem; color: var(--txt2); }
+    .log-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; font-family: var(--m); font-size: .63rem; background: #F8F9FA; border: 1px solid rgba(0,0,0,.05); margin-bottom: 4px; animation: logIn .3s ease; }
+    .log-method { font-weight: 800; min-width: 48px; }
+    .log-route { flex: 1; color: var(--txt2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .log-status { font-weight: 700; min-width: 32px; }
+    .log-time { color: var(--txt2); white-space: nowrap; }
+    .log-GET    .log-method { color: #059669; }
+    .log-POST   .log-method { color: #2563eb; }
+    .log-PUT    .log-method { color: #ea580c; }
+    .log-DELETE .log-method { color: #e63946; }
+    .log-ok  .log-status { color: #059669; }
+    .log-err .log-status { color: #e63946; }
+    @keyframes logIn { from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)} }
+    .seed-placeholder { background: rgba(156,141,212,.05); border: 1.5px dashed rgba(156,141,212,.25); border-radius: 10px; padding: 20px 16px; text-align: center; color: var(--txt2); font-family: var(--m); font-size: .68rem; line-height: 1.8; }
+    .seed-placeholder .seed-icon { font-size: 1.5rem; margin-bottom: 8px; display: block; }
+
+    /* FOOTER */
+    .footer-bar { background: var(--bg-warm); border-top: 1px solid rgba(0,0,0,.06); padding: 12px 24px; margin-top: 24px; }
+    .footer-top { max-width: 1400px; margin: 0 auto; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .footer-live-lbl { font-family: var(--f); font-size: .76rem; font-weight: 600; color: var(--txt); display: flex; align-items: center; gap: 8px; }
+    .live-badge { background: rgba(74,222,128,.12); border: 1px solid rgba(74,222,128,.3); color: #16a34a; font-family: var(--m); font-size: .54rem; padding: 2px 8px; border-radius: 4px; letter-spacing: .06em; display: flex; align-items: center; gap: 4px; }
+    .live-badge::before { content: ''; width: 5px; height: 5px; background: var(--green); border-radius: 50%; animation: livePulse 2s infinite; }
+    @keyframes livePulse { 0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.4);}50%{box-shadow:0 0 0 4px rgba(74,222,128,0);} }
+    .footer-icons { margin-left: auto; display: flex; gap: 6px; }
+    .footer-icon-btn { background: transparent; border: 1px solid rgba(0,0,0,.08); border-radius: 6px; padding: 5px 9px; cursor: pointer; color: var(--txt2); font-size: .72rem; transition: all .2s; }
+    .footer-icon-btn:hover { background: #fff; color: var(--txt); }
+    .footer-tester { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+    .footer-tester-lbl { font-family: var(--m); font-size: .58rem; color: var(--txt2); letter-spacing: .06em; text-transform: uppercase; }
+    .footer-method { background: #fff; border: 1px solid rgba(0,0,0,.1); border-radius: 7px; padding: 6px 10px; color: var(--txt); font-family: var(--m); font-size: .7rem; outline: none; cursor: pointer; }
+    .footer-send { background: var(--purple-btn); color: #fff; border: none; padding: 7px 16px; border-radius: 7px; font-family: var(--f); font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+    .footer-send:hover { background: #8a7bc7; }
+    .footer-bottom { max-width: 1400px; margin: 0 auto; }
+    .footer-url-inp { width: 100%; background: #fff; border: 1px solid rgba(0,0,0,.07); border-radius: 8px; padding: 8px 12px; color: var(--txt2); font-family: var(--m); font-size: .7rem; outline: none; }
+    .footer-url-inp::placeholder { color: #bbb; }
+
+    .hidden { display: none !important; }
+    .mono { font-family: var(--m); }
+    #resource-form-label { color: var(--purple) !important; }
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a href="/" class="logo">MockDock<span class="logo-dot">.</span></a>
+  <div class="nav-sep"></div>
+  <button class="nav-pill">Mock Backend Builder</button>
+  <div class="nav-right">
+    <a href="/" class="nav-btn">&#9881; Configure</a>
+    <a href="/" class="nav-btn">&#9654; Review</a>
+  </div>
+</nav>
+
+<!-- HERO STRIP -->
+<section class="hero-strip">
+  <div class="hero-strip-left">
+    <div class="hero-eyebrow">— Mock Backend Builder</div>
+    <div class="hero-title">MockDock</div>
+    <div class="hero-sub">// Define schema – Generate endpoints – Ship</div>
+  </div>
+  <div class="hero-strip-center">
+    <div class="spline-wrap">
+      <canvas id="hero3d" width="220" height="170"></canvas>
+      <div class="spline-shadow"></div>
+    </div>
+  </div>
+  <div class="hero-strip-right">
+    <div><div class="stat-val">Quick</div><div class="stat-lbl">Setup Time</div></div>
+    <div><div class="stat-val" style="font-size:1.8rem;">∞</div><div class="stat-lbl">Endpoints</div></div>
+    <div><div class="stat-val">1click</div><div class="stat-lbl">Deploy</div></div>
+  </div>
+</section>
+
+<!-- WIZARD -->
+<div class="wizard-outer">
+
+  <!-- Progress dots -->
+  <div class="wiz-progress" id="wiz-progress">
+    <div class="wiz-step-dot active" id="dot-1">
+      <div class="wiz-dot-circle">1</div>
+      <div class="wiz-dot-label">Namespace</div>
+    </div>
+    <div class="wiz-connector" id="con-1"></div>
+    <div class="wiz-step-dot" id="dot-2">
+      <div class="wiz-dot-circle">2</div>
+      <div class="wiz-dot-label">Resource</div>
+    </div>
+    <div class="wiz-connector" id="con-2"></div>
+    <div class="wiz-step-dot" id="dot-3">
+      <div class="wiz-dot-circle">3</div>
+      <div class="wiz-dot-label">Schema</div>
+    </div>
+    <div class="wiz-connector" id="con-3"></div>
+    <div class="wiz-step-dot" id="dot-4">
+      <div class="wiz-dot-circle">4</div>
+      <div class="wiz-dot-label">Seed</div>
+    </div>
+    <div class="wiz-connector" id="con-4"></div>
+    <div class="wiz-step-dot" id="dot-5">
+      <div class="wiz-dot-circle">✓</div>
+      <div class="wiz-dot-label">Output</div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 1: NAMESPACE ══ -->
+  <div class="wiz-card active" id="wiz-step-1">
+    <div class="wiz-card-head">
+      <div class="wiz-card-num">1</div>
+      <div>
+        <div class="wiz-card-title">Namespace</div>
+        <div class="wiz-card-sub">API slug &amp; auth config</div>
+      </div>
+    </div>
+    <div class="wiz-card-body">
+      <div class="field">
+        <label class="field-lbl">API Slug</label>
+        <div class="inp-row">
+          <input type="text" id="input-namespace" class="inp" placeholder="my-api" autocomplete="off" />
+          <span id="namespace-availability" style="font-size:.6rem;color:var(--txt2);white-space:nowrap;"></span>
+          <button type="button" id="namespace-randomize" class="btn-ghost hidden" style="padding:5px 9px;font-size:.66rem;">✦</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-lbl">Open Existing</label>
+        <div class="inp-row">
+          <input type="text" id="manual-slug-input" class="inp" placeholder="Paste slug or ID." autocomplete="off" />
+          <button class="btn-open" onclick="manualOpenApi()">Open</button>
+        </div>
+        <div id="manual-open-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:4px;"></div>
+      </div>
+      <div id="recent-apis-container" class="hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label class="field-lbl" style="margin:0;">Recent APIs</label>
+          <button id="clear-recent-btn" class="btn-ghost" style="padding:2px 7px;font-size:.58rem;" onclick="clearRecentApis()">Clear</button>
+        </div>
+        <div id="recent-apis-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="toggle-row">
+        <span class="toggle-lbl">Enable Auth</span>
+        <label class="switch"><input type="checkbox" id="auth-toggle" onchange="toggleAuth()" /><span class="slider"></span></label>
+      </div>
+      <div id="auth-config" class="hidden">
+        <div class="auth-inner">
+          <div class="field"><label class="field-lbl">Login Route</label><input type="text" id="input-login-route" class="inp" placeholder="/api/login" autocomplete="off" /></div>
+          <div class="field"><label class="field-lbl">Token</label><input type="text" id="input-token" class="inp" placeholder="mock_abc123" autocomplete="off" /></div>
+          <div class="field"><label class="field-lbl">Protected Routes</label><div id="protected-routes-list"></div></div>
+        </div>
+      </div>
+      <div id="step1-error" class="error-msg hidden"></div>
+    </div>
+    <div class="wiz-nav">
+      <button class="btn-wiz-back invisible">← Back</button>
+      <span class="wiz-nav-info">Step 1 of 4</span>
+      <button class="btn-wiz-next" onclick="wizNext(1)">Next →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 2: RESOURCE ══ -->
+  <div class="wiz-card" id="wiz-step-2">
+    <div class="wiz-card-head">
+      <div class="wiz-card-num">2</div>
+      <div>
+        <div class="wiz-card-title">Resource</div>
+        <div class="wiz-card-sub">Define a resource</div>
+      </div>
+    </div>
+    <div class="wiz-card-body">
+      <div class="field">
+        <label class="field-lbl" id="resource-form-label">Name</label>
+        <input type="text" id="input-resource" class="inp" placeholder="Users" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label class="field-lbl">Route Path</label>
+        <input type="text" id="input-route" class="inp" placeholder="/users" autocomplete="off" />
+        <div class="field-hint">CRUD endpoints auto generated</div>
+      </div>
+      <div id="resource-list" style="margin:6px 0;"></div>
+      <div class="field"><label class="field-lbl">Added Resources</label></div>
+      <button type="button" id="add-resource-btn" class="btn-add" onclick="saveAndAddResource()">+ Add Resource</button>
+    </div>
+    <div class="wiz-nav">
+      <button class="btn-wiz-back" onclick="wizBack(2)">← Back</button>
+      <span class="wiz-nav-info">Step 2 of 4</span>
+      <button class="btn-wiz-next" onclick="wizNext(2)">Next →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: SCHEMA & AUTH ══ -->
+  <div class="wiz-card" id="wiz-step-3">
+    <div class="wiz-card-head">
+      <div class="wiz-card-num">3</div>
+      <div>
+        <div class="wiz-card-title">Schema &amp; Auth</div>
+        <div class="wiz-card-sub">Fields &amp; generate</div>
+      </div>
+    </div>
+    <div class="wiz-card-body">
+      <div class="step-block" id="step-1-schema">
+
+        <div class="schema-mode-tabs">
+          <button class="schema-mode-tab active" id="tab-plain" onclick="switchSchemaMode('plain')">✦ Plain English</button>
+          <button class="schema-mode-tab" id="tab-swagger" onclick="switchSchemaMode('swagger')">&lt;/&gt; Swagger / OpenAPI</button>
+        </div>
+
+        <div class="schema-panel active" id="panel-plain">
+          <div class="field">
+            <label class="field-lbl">Describe your schema</label>
+            <div class="inp-row" style="margin-bottom:7px;">
+              <input type="text" id="ai-schema-prompt" class="inp" placeholder="e.g. users with name, email, age and role" autocomplete="off" />
+              <button type="button" id="ai-generate-btn" class="btn-ai" onclick="generateSchemaWithAI()">+ AI</button>
+            </div>
+            <div id="ai-schema-status" style="font-family:var(--m);font-size:.6rem;color:var(--txt2);margin-bottom:6px;min-height:14px;"></div>
+            <textarea id="schema-json-input" class="code-inp" rows="5" placeholder='{"id":"string","name":"string","email":"string"}'></textarea>
+            <div id="json-parse-status" style="font-family:var(--m);font-size:.6rem;color:var(--txt2);margin-top:4px;min-height:14px;"></div>
+          </div>
+        </div>
+
+        <div class="schema-panel" id="panel-swagger">
+          <div class="field">
+            <label class="field-lbl">Paste Swagger / OpenAPI Spec</label>
+            <textarea id="swagger-input" class="swagger-textarea" rows="8" placeholder="Paste your OpenAPI 3.0 JSON or YAML here&#10;&#10;Supports:&#10;  • JSON  { &quot;openapi&quot;: &quot;3.0.0&quot;, ... }&#10;  • YAML  openapi: 3.0.0&#10;&#10;Auto-extracts: fields, types, routes, auth"></textarea>
+            <div id="swagger-status" class="swagger-status info">Paste a spec and click Parse →</div>
+          </div>
+          <button class="swagger-parse-btn" id="swagger-parse-btn" onclick="parseSwaggerSpec()">⟳ &nbsp; Parse &amp; Extract Schema</button>
+          <div id="swagger-preview" class="swagger-preview hidden">
+            <div class="swagger-preview-title">Extracted Fields</div>
+            <div id="swagger-fields-list"></div>
+            <div id="swagger-routes-row" class="swagger-extracted-routes hidden">
+              <div class="swagger-preview-title" style="margin-top:8px;">Detected Routes</div>
+              <div id="swagger-routes-list"></div>
+            </div>
+            <button class="swagger-apply-btn" onclick="applySwaggerToForm()">✓ &nbsp; Apply to Schema &amp; Route</button>
+          </div>
+        </div>
+
+        <div class="divider" style="margin:10px 0 8px;"></div>
+        <div class="toggle-row">
+          <span class="toggle-lbl">Enable Auth</span>
+          <label class="switch">
+            <input type="checkbox" id="auth-toggle-mirror" onchange="document.getElementById('auth-toggle').checked=this.checked;toggleAuth();" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="step1-error-card3" class="error-msg hidden"></div>
+      </div>
+      <section id="output-panel" class="hidden"></section>
+    </div>
+    <div class="wiz-nav">
+      <button class="btn-wiz-back" onclick="wizBack(3)">← Back</button>
+      <span class="wiz-nav-info">Step 3 of 4</span>
+      <button class="btn-wiz-next" onclick="wizGoToStep4()">Next →</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 4: SEED RECORDS ══ -->
+  <div class="wiz-card" id="wiz-step-4">
+    <div class="wiz-card-head">
+      <div class="wiz-card-num">4</div>
+      <div>
+        <div class="wiz-card-title">Seed Records</div>
+        <div class="wiz-card-sub">Initial data for resources</div>
+      </div>
+    </div>
+    <div class="wiz-card-body">
+      <div id="seed-placeholder" class="seed-placeholder">
+        <span class="seed-icon">🌱</span>
+        Add resources in Step 2,<br>then seed initial records here.
+      </div>
+      <div id="resource-sections"></div>
+      <div id="step2-error" class="error-msg hidden"></div>
+    </div>
+    <div class="wiz-nav">
+      <button class="btn-wiz-back" onclick="wizBack(4)">← Back</button>
+      <span class="wiz-nav-info">Step 4 of 4</span>
+      <button class="btn-wiz-next" id="submit-btn" onclick="wizSubmit()">Generate Mock API 🚀</button>
+    </div>
+  </div>
+
+  <!-- ══ STEP 5: OUTPUT ══ -->
+  <div class="wiz-card wiz-output" id="wiz-step-5">
+    <div class="wiz-card-head" style="border-bottom:2px solid rgba(156,141,212,.15);">
+      <div class="wiz-card-num" style="background:rgba(156,141,212,.15);">✓</div>
+      <div>
+        <div class="wiz-card-title">Your Mock API is Live 🎉</div>
+        <div class="wiz-card-sub">All endpoints generated and ready</div>
+      </div>
+      <button class="btn-ghost" style="margin-left:auto;" onclick="wizReset()">← Start Over</button>
+    </div>
+    <div class="wiz-card-body">
+
+      <!-- Output grid -->
+      <div class="out-grid" id="output-cards-row">
+
+        <div class="card out-card" id="oc-script">
+          <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+            <div class="card-num" style="background:rgba(156,141,212,.15);">⟨/⟩</div>
+            <div><div class="card-title">Script Tag</div><div class="card-sub">Drop into your HTML</div></div>
+          </div>
+          <div class="card-body">
+            <div class="out-primary">
+              <div class="code-row">
+                <code id="output-script-tag" class="code-val" style="font-size:.62rem;word-break:break-all;"></code>
+                <button class="btn-copy" onclick="copyText('output-script-tag',this)">Copy</button>
+              </div>
+              <div class="session-note">⚠ Session-only records.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-schema">
+          <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+            <div class="card-num" style="background:rgba(156,141,212,.15);">{ }</div>
+            <div><div class="card-title">Schema</div><div class="card-sub">Field definitions</div></div>
+          </div>
+          <div class="card-body"><div id="output-schema-summary" class="schema-chips"></div></div>
+        </div>
+
+        <div class="card out-card" id="oc-share">
+          <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+            <div class="card-num" style="background:rgba(156,141,212,.15);">↗</div>
+            <div><div class="card-title">Share &amp; Expiry</div><div class="card-sub">URL, token, TTL</div></div>
+          </div>
+          <div class="card-body">
+            <div id="output-share-block" class="hidden">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <span class="out-lbl" style="margin:0;">Share URL</span>
+                <span id="output-mode-badge" style="font-family:var(--m);font-size:.56rem;font-weight:700;letter-spacing:.06em;"></span>
+              </div>
+              <div class="code-row" style="margin-bottom:10px;">
+                <code id="output-share-url" class="code-val" style="font-size:.62rem;"></code>
+                <button class="btn-copy" onclick="copyText('output-share-url',this)">Copy</button>
+              </div>
+              <div id="output-mode-owner" class="hidden">
+                <div class="field-lbl" style="margin-bottom:4px;">Owner Token</div>
+                <div class="code-row">
+                  <code id="output-token-value" class="code-val" style="color:#0891b2;font-size:.62rem;"></code>
+                  <button class="btn-copy" onclick="copyText('output-token-value',this)">Copy</button>
+                </div>
+              </div>
+              <div id="output-mode-viewer" class="hidden">
+                <div style="display:flex;gap:7px;margin-top:8px;">
+                  <input type="text" id="viewer-token-input" class="inp" placeholder="Enter ownership token" autocomplete="off" style="flex:1;" />
+                  <button id="viewer-unlock-btn" class="btn-ghost" style="padding:6px 12px;" onclick="unlockOwnerMode()">Unlock</button>
+                </div>
+                <div id="viewer-token-error" class="hidden" style="font-family:var(--m);font-size:.62rem;color:var(--red);margin-top:5px;"></div>
+              </div>
+              <div class="divider"></div>
+            </div>
+            <div class="field-lbl" style="margin-bottom:4px;">Expires</div>
+            <div id="output-expiry" class="expiry-val mono"></div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-get">
+          <div class="card-head" style="border-bottom:2px solid rgba(5,150,105,.2);">
+            <div class="card-num" style="background:rgba(5,150,105,.12);border-color:rgba(5,150,105,.3);color:#059669;font-size:.52rem;font-weight:800;width:28px;height:28px;">GET</div>
+            <div><div class="card-title">GET</div><div class="card-sub">Fetch all / by ID</div></div>
+          </div>
+          <div class="card-body">
+            <div id="oc-get-tabs" class="snippet-tabs"></div>
+            <div id="oc-get-content"><div class="logs-empty">Waiting for generate…</div></div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-post">
+          <div class="card-head" style="border-bottom:2px solid rgba(37,99,235,.2);">
+            <div class="card-num" style="background:rgba(37,99,235,.12);border-color:rgba(37,99,235,.3);color:#2563eb;font-size:.52rem;font-weight:800;width:28px;height:28px;">POST</div>
+            <div><div class="card-title">POST</div><div class="card-sub">Create a record</div></div>
+          </div>
+          <div class="card-body">
+            <div id="oc-post-tabs" class="snippet-tabs"></div>
+            <div id="oc-post-content"><div class="logs-empty">Waiting for generate…</div></div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-put">
+          <div class="card-head" style="border-bottom:2px solid rgba(234,88,12,.2);">
+            <div class="card-num" style="background:rgba(234,88,12,.12);border-color:rgba(234,88,12,.3);color:#ea580c;font-size:.52rem;font-weight:800;width:28px;height:28px;">PUT</div>
+            <div><div class="card-title">PUT</div><div class="card-sub">Update by ID</div></div>
+          </div>
+          <div class="card-body">
+            <div id="oc-put-tabs" class="snippet-tabs"></div>
+            <div id="oc-put-content"><div class="logs-empty">Waiting for generate…</div></div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-delete">
+          <div class="card-head" style="border-bottom:2px solid rgba(231,122,115,.2);">
+            <div class="card-num" style="background:rgba(231,122,115,.12);border-color:rgba(231,122,115,.3);color:#e63946;font-size:.52rem;font-weight:800;width:28px;height:28px;">DEL</div>
+            <div><div class="card-title">DELETE</div><div class="card-sub">Remove by ID</div></div>
+          </div>
+          <div class="card-body">
+            <div id="oc-delete-tabs" class="snippet-tabs"></div>
+            <div id="oc-delete-content"><div class="logs-empty">Waiting for generate…</div></div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-tester">
+          <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+            <div class="card-num" style="background:rgba(156,141,212,.15);">▶</div>
+            <div><div class="card-title">API Tester</div><div class="card-sub">Send live requests</div></div>
+          </div>
+          <div class="card-body">
+            <div class="tester-row"><select id="tester-method-select" class="select-inp" onchange="onTesterMethodChange()"></select></div>
+            <div id="tester-body-wrap" class="hidden">
+              <label class="field-lbl">Request Body (JSON)</label>
+              <textarea id="tester-body" class="code-inp" rows="4"></textarea>
+            </div>
+            <div id="tester-auth-wrap" class="hidden">
+              <label class="field-lbl">Auth Header</label>
+              <input type="text" id="tester-auth-header" class="inp" placeholder="Bearer mock_abc123" />
+            </div>
+            <button class="btn-primary" onclick="sendTestRequest()" style="margin-top:8px;">Send Request</button>
+            <div id="tester-response" class="hidden tester-resp">
+              <div class="resp-meta"><span class="resp-lbl">Response</span><span id="tester-status-badge" class="status-badge"></span></div>
+              <pre id="tester-response-body" class="resp-body"></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card out-card" id="oc-logs" style="grid-column:1/-1;">
+          <div class="card-head" style="border-bottom:2px solid rgba(156,141,212,.2);">
+            <div class="card-num" style="background:rgba(156,141,212,.15);">≡</div>
+            <div><div class="card-title">Request Logs</div><div class="card-sub">Live activity feed</div></div>
+          </div>
+          <div class="card-body" id="output-logs-block">
+            <div id="output-logs-empty" class="logs-empty">No requests logged yet.</div>
+            <div id="output-logs-table"></div>
+          </div>
+        </div>
+
+      </div><!-- /out-grid -->
+
+    </div><!-- /wiz-card-body -->
+  </div><!-- /wiz-step-5 -->
+
+</div><!-- /wizard-outer -->
+
+<!-- Hidden output holders (needed by script.js) -->
+<div id="output-fetch-block" class="hidden"><div id="output-fetch-snippets"></div></div>
+<div id="output-endpoints" class="hidden"></div>
+<section id="preview-panel" class="hidden">
+  <div id="preview-route-path"></div>
+  <div id="preview-endpoints"></div>
+</section>
+
+<!-- FOOTER -->
+<div class="footer-bar">
+  <div class="footer-top">
+    <span class="footer-live-lbl">Live Endpoints <span class="live-badge">• Live</span></span>
+    <div class="footer-icons">
+      <button class="footer-icon-btn">&#9783;</button>
+      <button class="footer-icon-btn">&#9776;</button>
+      <button class="footer-icon-btn">&#10064;</button>
+      <button class="footer-icon-btn">&#9638;</button>
+    </div>
+    <div class="footer-tester">
+      <span class="footer-tester-lbl">API Tester</span>
+      <select id="bar-method-select" class="footer-method">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+      </select>
+      <button class="footer-send" onclick="sendTestRequest()">Send</button>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <input type="text" class="footer-url-inp" id="bar-endpoint-url-inp" placeholder="/api URL" readonly />
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+<!-- ═══════════════════════════════════════════════════════
+     WIZARD CONTROLLER
+═══════════════════════════════════════════════════════ -->
+<script>
+var _currentWizStep = 1;
+
+function wizShow(n) {
+  for (var i = 1; i <= 5; i++) {
+    var card = document.getElementById('wiz-step-' + i);
+    var dot  = document.getElementById('dot-' + i);
+    if (card) card.classList.toggle('active', i === n);
+    if (dot) {
+      dot.classList.toggle('active', i === n);
+      dot.classList.toggle('done', i < n);
+    }
+  }
+  for (var j = 1; j <= 4; j++) {
+    var con = document.getElementById('con-' + j);
+    if (con) con.classList.toggle('done', j < n);
+  }
+  _currentWizStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function wizNext(from) {
+  if (from === 1) {
+    // Validate namespace
+    var ns = document.getElementById('input-namespace').value.trim();
+    var err = document.getElementById('step1-error');
+    if (!ns) { if(err){ err.textContent='Please enter an API slug.'; err.classList.remove('hidden'); } return; }
+    if(err) err.classList.add('hidden');
+  }
+  wizShow(from + 1);
+}
+
+function wizBack(from) { wizShow(from - 1); }
+
+function wizGoToStep4() {
+  // Trigger schema validation that goToStep2() normally does, then go to step 4
+  if (typeof goToStep2 === 'function') {
+    // intercept — we override the show-output-panel behaviour below
+    var errEl = document.getElementById('step1-error-card3');
+    var schema = document.getElementById('schema-json-input').value.trim();
+    if (!schema) {
+      if(errEl){ errEl.textContent='Please enter a schema.'; errEl.classList.remove('hidden'); }
+      return;
+    }
+    try { JSON.parse(schema); } catch(e) {
+      if(errEl){ errEl.textContent='Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); }
+      return;
+    }
+    if(errEl) errEl.classList.add('hidden');
+  }
+  wizShow(4);
+}
+
+function wizSubmit() {
+  // Call original submitCreate, then advance to step 5 after a short delay
+  if (typeof submitCreate === 'function') submitCreate();
+  setTimeout(function() { wizShow(5); }, 400);
+}
+
+function wizReset() {
+  wizShow(1);
+  // Reset form fields
+  ['input-namespace','input-resource','input-route','schema-json-input','ai-schema-prompt'].forEach(function(id) {
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  var rl = document.getElementById('resource-list'); if(rl) rl.innerHTML = '';
+  var rs = document.getElementById('resource-sections'); if(rs) rs.innerHTML = '';
+  var op = document.getElementById('output-panel'); if(op) op.classList.add('hidden');
+}
+
+/* Override goToStep2 to stay in wizard (schema card calls it via Generate button).
+   The button is now replaced by the wizard Next, but goToStep2 may still be called
+   internally by script.js — let it run its logic, we just don't let it scroll. */
+var _origGoToStep2 = window.goToStep2;
+window.goToStep2 = function() {
+  if (typeof _origGoToStep2 === 'function') _origGoToStep2();
+  // don't advance wizard here — wizard nav controls that
+};
+
+/* goBackToStep1 — used inside seed card by script.js */
+window.goBackToStep1 = function() { wizShow(3); };
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     SCHEMA MODE SWITCHER + SWAGGER PARSER
+═══════════════════════════════════════════════════════ -->
+<script>
+function switchSchemaMode(mode) {
+  document.getElementById('tab-plain').classList.toggle('active', mode === 'plain');
+  document.getElementById('tab-swagger').classList.toggle('active', mode === 'swagger');
+  document.getElementById('panel-plain').classList.toggle('active', mode === 'plain');
+  document.getElementById('panel-swagger').classList.toggle('active', mode === 'swagger');
+}
+
+function tryParseSpec(text) {
+  var t = text.trim();
+  if (t.charAt(0) === '{' || t.charAt(0) === '[') return JSON.parse(t);
+  return parseYamlBlock(text.split('\n'), { pos: 0 }, 0);
+}
+function parseYamlBlock(lines, cursor, baseIndent) {
+  var obj = {};
+  while (cursor.pos < lines.length) {
+    var raw = lines[cursor.pos];
+    if (raw === undefined) break;
+    var stripped = raw.replace(/\r$/, '');
+    var trimmed  = stripped.trimStart();
+    if (!trimmed || trimmed.charAt(0) === '#') { cursor.pos++; continue; }
+    var indent = stripped.length - trimmed.length;
+    if (indent < baseIndent) break;
+    if (trimmed.startsWith('- ')) break;
+    var colonIdx = trimmed.indexOf(':');
+    if (colonIdx === -1) { cursor.pos++; continue; }
+    var key = trimmed.slice(0, colonIdx).trim();
+    var rest = trimmed.slice(colonIdx + 1).trimStart();
+    cursor.pos++;
+    if (!rest || rest === '|' || rest === '>') {
+      obj[key] = parseYamlBlock(lines, cursor, indent + 1);
+    } else if (rest.startsWith('[')) {
+      try { obj[key] = JSON.parse(rest.replace(/'/g, '"')); } catch(e) { obj[key] = []; }
+    } else {
+      obj[key] = coerceYamlScalar(rest);
+    }
+  }
+  return obj;
+}
+function coerceYamlScalar(s) {
+  if (s === 'true') return true;
+  if (s === 'false') return false;
+  if (s === 'null' || s === '~') return null;
+  if (!isNaN(s) && s !== '') return Number(s);
+  if ((s.startsWith("'") && s.endsWith("'")) || (s.startsWith('"') && s.endsWith('"'))) return s.slice(1, -1);
+  return s;
+}
+function extractFromSpec(spec) {
+  var schema = {}, routes = [], title = (spec.info && spec.info.title) || '', authType = null;
+  var sec = (spec.components && spec.components.securitySchemes) || spec.securityDefinitions || {};
+  Object.keys(sec).forEach(function(k) {
+    var s = sec[k];
+    if (s.type === 'http' && s.scheme === 'bearer') authType = 'bearer';
+    if (s.type === 'apiKey') authType = 'apiKey';
+  });
+  var defs = (spec.components && spec.components.schemas) || spec.definitions || {};
+  var names = Object.keys(defs);
+  if (names.length) {
+    var preferred = names.find(function(n) { return !/error|page|pagination|response|wrapper/i.test(n); }) || names[0];
+    var target = defs[preferred];
+    if (target && target.properties) {
+      var req = target.required || [];
+      Object.keys(target.properties).forEach(function(field) {
+        var p = target.properties[field];
+        var type = p.type || (p['$ref'] ? 'object' : 'string');
+        if (type === 'integer') type = 'number';
+        schema[field] = { type: type, required: req.indexOf(field) !== -1 };
+      });
+    }
+  }
+  if (spec.paths) Object.keys(spec.paths).forEach(function(p) { routes.push(p); });
+  return { schema: schema, routes: routes, title: title, authType: authType };
+}
+var _swaggerParsed = null;
+function parseSwaggerSpec() {
+  var btn = document.getElementById('swagger-parse-btn');
+  var input = document.getElementById('swagger-input').value.trim();
+  var preview = document.getElementById('swagger-preview');
+  if (!input) { setSwaggerStatus('err', '✕ Nothing to parse — paste a spec first.'); return; }
+  btn.disabled = true;
+  setSwaggerStatus('info', '⟳ Parsing…');
+  setTimeout(function() {
+    try {
+      var spec = tryParseSpec(input);
+      var result = extractFromSpec(spec);
+      _swaggerParsed = result;
+      renderSwaggerPreview(result);
+      var count = Object.keys(result.schema).length;
+      setSwaggerStatus('ok', '✓ Parsed — ' + count + ' field' + (count === 1 ? '' : 's') + ' found' + (result.routes.length ? ', ' + result.routes.length + ' route(s) detected.' : '.'));
+    } catch(e) {
+      setSwaggerStatus('err', '✕ ' + (e.message || 'Parse error. Try pasting as JSON.'));
+      preview.classList.add('hidden');
+    }
+    btn.disabled = false;
+  }, 60);
+}
+function setSwaggerStatus(type, msg) {
+  var el = document.getElementById('swagger-status');
+  el.className = 'swagger-status ' + type;
+  el.textContent = msg;
+}
+function renderSwaggerPreview(result) {
+  var preview = document.getElementById('swagger-preview');
+  var fieldsList = document.getElementById('swagger-fields-list');
+  var routesRow = document.getElementById('swagger-routes-row');
+  var routesList = document.getElementById('swagger-routes-list');
+  var fields = Object.keys(result.schema);
+  if (!fields.length) {
+    fieldsList.innerHTML = '<div style="font-family:var(--m);font-size:.65rem;color:var(--txt2);">No schema properties found.</div>';
+  } else {
+    fieldsList.innerHTML = fields.map(function(f) {
+      var fd = result.schema[f];
+      return '<div class="swagger-field-row"><span class="swagger-field-name">'+f+'</span><span class="swagger-field-type">'+fd.type+'</span>'+(fd.required?'<span class="swagger-field-req">required</span>':'<span class="swagger-field-opt">optional</span>')+'</div>';
+    }).join('');
+  }
+  if (result.routes.length) {
+    routesRow.classList.remove('hidden');
+    routesList.innerHTML = result.routes.slice(0,8).map(function(r){ return '<span class="swagger-route-chip">⟶ '+r+'</span>'; }).join('');
+  } else { routesRow.classList.add('hidden'); }
+  preview.classList.remove('hidden');
+}
+function applySwaggerToForm() {
+  if (!_swaggerParsed) return;
+  var r = _swaggerParsed;
+  var flat = {};
+  Object.keys(r.schema).forEach(function(k) { flat[k] = r.schema[k].type; });
+  document.getElementById('schema-json-input').value = JSON.stringify(flat, null, 2);
+  if (r.routes.length) {
+    var ri = document.getElementById('input-route');
+    if (!ri.value.trim()) { ri.value = r.routes[0]; var bi = document.getElementById('bar-endpoint-url-inp'); if (bi) bi.value = r.routes[0]; }
+  }
+  if (r.title) { var ni = document.getElementById('input-namespace'); if (!ni.value.trim()) ni.value = r.title.toLowerCase().replace(/\s+/g,'-'); }
+  if (r.authType === 'bearer') { document.getElementById('auth-toggle').checked = true; document.getElementById('auth-toggle-mirror').checked = true; if (typeof toggleAuth === 'function') toggleAuth(); }
+  switchSchemaMode('plain');
+  var ta = document.getElementById('schema-json-input');
+  ta.style.transition = 'box-shadow .15s';
+  ta.style.boxShadow = '0 0 0 2.5px rgba(74,222,128,.55)';
+  setTimeout(function() { ta.style.boxShadow = ''; }, 1400);
+  ta.dispatchEvent(new Event('input'));
+  setSwaggerStatus('ok', '✓ Applied! Schema is ready — click Next.');
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════
+     OUTPUT WIRING + SNIPPET RENDERER
+═══════════════════════════════════════════════════════ -->
+<script>
+window.addEventListener('load', function() {
+  function syncSeedPlaceholder() {
+    var s = document.getElementById('resource-sections');
+    var p = document.getElementById('seed-placeholder');
+    if (s && p) p.classList.toggle('hidden', s.children.length > 0);
+  }
+  var rsec = document.getElementById('resource-sections');
+  if (rsec) new MutationObserver(syncSeedPlaceholder).observe(rsec, { childList: true, subtree: true });
+  syncSeedPlaceholder();
+
+  var orig = window.fillOutputPanel;
+  if (typeof orig === 'function') {
+    window.fillOutputPanel = function(data) { orig(data); setTimeout(populateMethodCards, 80); };
+  }
+
+  var SS = ['font-size:.62rem','line-height:1.75','white-space:pre-wrap','overflow-x:auto','background:#FFFFFF','color:#cdd6f4','border-radius:7px','padding:10px 12px','margin-bottom:8px','display:block',"font-family:'Fira Code',monospace"].join(';');
+  function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function buildCurl(method, url, ft) {
+    var m = ft && ft.match(/Bearer ([a-zA-Z0-9_]+)/);
+    var auth = m ? ' \\\n  -H "Authorization: Bearer ' + m[1] + '"' : '';
+    var base = url || '/api/resource';
+    if (method === 'GET')    return 'curl -X GET "'    + base + '"'      + auth + ' \\\n  -H "Content-Type: application/json"';
+    if (method === 'POST')   return 'curl -X POST "'   + base + '"'      + auth + ' \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"value"}\'';
+    if (method === 'PUT')    return 'curl -X PUT "'    + base + '/<id>"' + auth + ' \\\n  -H "Content-Type: application/json" \\\n  -d \'{"field":"updated"}\'';
+    if (method === 'DELETE') return 'curl -X DELETE "' + base + '/<id>"' + auth + ' \\\n  -H "Content-Type: application/json"';
+    return '';
+  }
+  function renderTabbed(method, url, fetchTxt, curlTxt) {
+    var mid = method.toLowerCase();
+    return ['<div class="snippet-tabs" id="stabs-'+mid+'">','<button class="stab active" onclick="switchTab(\''+mid+'\',\'fetch\')">fetch</button>','<button class="stab" onclick="switchTab(\''+mid+'\',\'curl\')">curl</button>','</div>',
+      url ? '<div style="font-family:var(--m);font-size:.62rem;color:var(--txt2);margin-bottom:6px;">'+escHtml(url)+'</div>' : '',
+      '<div class="stab-panel active" id="sp-'+mid+'-fetch"><div class="ep-snippet" style="'+SS+'">'+escHtml(fetchTxt||'// No fetch snippet available')+'</div><button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-fetch\')">Copy</button></div>',
+      '<div class="stab-panel" id="sp-'+mid+'-curl"><div class="ep-snippet" style="'+SS+'">'+escHtml(curlTxt)+'</div><button class="btn-copy" style="margin-top:4px;" onclick="copyRaw(\'sp-'+mid+'-curl\')">Copy</button></div>'
+    ].join('');
+  }
+  function populateMethodCards() {
+    var epList = document.getElementById('output-endpoints');
+    if (!epList) return;
+    var eps = [];
+    epList.querySelectorAll('.method-badge').forEach(function(badge) {
+      var p = badge.parentElement;
+      var u = p.querySelector('span:not(.method-badge),code,.ep-card-url');
+      eps.push({ method: badge.textContent.trim(), url: u ? u.textContent.trim() : '' });
+    });
+    var fetchMap = {};
+    var fsb = document.getElementById('output-fetch-block');
+    if (fsb) {
+      fsb.querySelectorAll('.fetch-snippet,pre,code').forEach(function(s) {
+        var txt = s.textContent || '';
+        ['GET','POST','PUT','DELETE'].forEach(function(m) {
+          if (!fetchMap[m] && (txt.includes("'"+m+"'") || txt.includes('"'+m+'"'))) fetchMap[m] = txt.trim();
+        });
+        if (!fetchMap['GET'] && txt.includes('fetch(') && !txt.includes('method')) fetchMap['GET'] = txt.trim();
+      });
+    }
+    ['GET','POST','PUT','DELETE'].forEach(function(m) {
+      var el = document.getElementById('oc-' + m.toLowerCase() + '-content');
+      if (!el) return;
+      var ep = eps.find(function(e){ return e.method === m; });
+      var url = ep ? ep.url : '';
+      var ft = fetchMap[m] || '';
+      el.innerHTML = renderTabbed(m, url, ft, buildCurl(m, url, ft));
+    });
+  }
+  window.switchTab = function(method, tab) {
+    ['fetch','curl'].forEach(function(t) {
+      var p = document.getElementById('sp-'+method+'-'+t);
+      if (p) p.classList.toggle('active', t === tab);
+    });
+    document.querySelectorAll('#stabs-'+method+' .stab').forEach(function(b) { b.classList.toggle('active', b.textContent === tab); });
+  };
+  window.copyRaw = function(panelId) {
+    var panel = document.getElementById(panelId);
+    if (!panel) return;
+    var snip = panel.querySelector('.ep-snippet');
+    if (!snip) return;
+    navigator.clipboard.writeText(snip.textContent).then(function() {
+      var btn = panel.querySelector('.btn-copy');
+      if (btn) { btn.textContent = 'Copied!'; setTimeout(function(){ btn.textContent = 'Copy'; }, 1500); }
+    });
+  };
+  function patchLogRenderer() {
+    var table = document.getElementById('output-logs-table');
+    if (!table) return;
+    new MutationObserver(function() {
+      table.querySelectorAll('.log-row:not([data-patched])').forEach(function(row) {
+        row.setAttribute('data-patched','1');
+        var parts = row.textContent.trim().split(/\s+/);
+        var method = parts[0] || '';
+        var status = '', route = '', time = '';
+        parts.forEach(function(p,i){ if (/^\d{3}$/.test(p)) { status=p; route=parts.slice(1,i).join(' '); time=parts.slice(i+1).join(' '); } });
+        if (!status) return;
+        row.className = 'log-row log-'+method+(parseInt(status)<400?' log-ok':' log-err');
+        row.innerHTML = '<span class="log-method">'+method+'</span><span class="log-route">'+route+'</span><span class="log-status">'+status+'</span><span class="log-time">'+time+'</span>';
+      });
+    }).observe(table, { childList:true, subtree:true });
+  }
+  patchLogRenderer();
+});
+</script>
+
+<!-- Sync helpers -->
+<script>
+(function(){
+  var route=document.getElementById('input-route'), bar=document.getElementById('bar-endpoint-url-inp');
+  if(route&&bar) route.addEventListener('input',function(){ bar.value=this.value; });
+  var t1=document.getElementById('auth-toggle'), t2=document.getElementById('auth-toggle-mirror');
+  if(t1&&t2) t1.addEventListener('change',function(){ t2.checked=this.checked; });
+  var bs=document.getElementById('bar-method-select'), ms=document.getElementById('tester-method-select');
+  if(bs&&ms){
+    bs.addEventListener('change',function(){ if(ms) ms.value=this.value; });
+    new MutationObserver(function(){ if(ms.value) bs.value=ms.value; }).observe(ms,{childList:true});
+  }
+})();
+</script>
+
+<!-- Three.js hero 3D -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  var canvas=document.getElementById('hero3d');
+  if(!canvas||typeof THREE==='undefined') return;
+  var renderer=new THREE.WebGLRenderer({canvas:canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(window.devicePixelRatio); renderer.setSize(220,170);
+  var scene=new THREE.Scene(), cam=new THREE.PerspectiveCamera(38,220/170,.1,100);
+  cam.position.set(0,.5,5);
+  scene.add(new THREE.AmbientLight(0xffffff,.4));
+  var dl=new THREE.DirectionalLight(0xffffff,1.1); dl.position.set(3,6,4); scene.add(dl);
+  var pl=new THREE.PointLight(0x9C8DD4,1.8,12); pl.position.set(-2,2,3); scene.add(pl);
+  var rl=new THREE.PointLight(0xE2D9FF,.8,10); rl.position.set(2,-1,2); scene.add(rl);
+  var g=new THREE.Group(); scene.add(g);
+  var mat=new THREE.MeshPhysicalMaterial({color:0x9C8DD4,metalness:.15,roughness:.08,transmission:.55,thickness:1.2,reflectivity:.9,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.88});
+  g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1,1),mat));
+  g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.08,1),new THREE.MeshBasicMaterial({color:0xC4B8F0,wireframe:true,transparent:true,opacity:.18})));
+  var ring=new THREE.Mesh(new THREE.TorusGeometry(1.42,.03,16,80),new THREE.MeshPhysicalMaterial({color:0xB8ACEC,metalness:.6,roughness:.1,transparent:true,opacity:.7}));
+  ring.rotation.x=Math.PI/2.5; ring.rotation.z=.3; g.add(ring);
+  var dot=new THREE.Mesh(new THREE.SphereGeometry(.12,16,16),new THREE.MeshPhysicalMaterial({color:0xE8E0FF,metalness:.5,roughness:.1}));
+  g.add(dot);
+  var clk=new THREE.Clock();
+  (function tick(){
+    requestAnimationFrame(tick);
+    var t=clk.getElapsedTime();
+    g.rotation.y=t*.35; g.rotation.x=Math.sin(t*.4)*.18; g.position.y=Math.sin(t*.7)*.08;
+    dot.position.set(Math.cos(t*1.1)*1.55,Math.sin(t*.9)*.4,Math.sin(t*1.1)*1.55);
+    renderer.render(scene,cam);
+  })();
+})();
+</script>
+</body>
+</html>

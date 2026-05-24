@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MockDock — App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #020408;
+      --s: #0a0f1e;
+      --s2: #0f172a;
+      --acc: #6366f1;
+      --acc2: #22d3ee;
+      --grn: #10b981;
+      --pink: #f472b6;
+      --amb: #f59e0b;
+      --txt: #f8fafc;
+      --mut: #475569;
+      --bor: rgba(99,102,241,0.18);
+      --bor2: rgba(99,102,241,0.08);
+      --f: 'Syne', sans-serif;
+      --m: 'JetBrains Mono', monospace;
+      --accent: #6366f1;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #22d3ee;
+    }
+
+    html { font-size: 14px; }
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: var(--f);
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* cursor */
+    #cur { position:fixed;width:8px;height:8px;background:#fff;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:difference;transition:transform .15s; }
+    #cur2 { position:fixed;width:30px;height:30px;border:1px solid rgba(99,102,241,.5);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:left .1s,top .1s; }
+
+    /* THREE canvas */
+    #bg-canvas { position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none; }
+    #bg-vig {
+      position:fixed;inset:0;z-index:1;pointer-events:none;
+      background:
+        radial-gradient(ellipse 80% 70% at 50% 50%,transparent 25%,rgba(2,4,8,.8) 100%),
+        linear-gradient(to bottom,rgba(2,4,8,.7) 0%,transparent 18%,transparent 72%,rgba(2,4,8,.97) 100%);
+    }
+
+    /* HEADER */
+    .site-header {
+      position:sticky;top:0;z-index:200;
+      background:rgba(2,4,8,.82);
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border-bottom:1px solid var(--bor);
+    }
+    .header-inner {
+      max-width:1400px;margin:0 auto;padding:13px 28px;
+      display:flex;align-items:center;gap:20px;
+    }
+    .logo { font-family:var(--m);font-size:1.05rem;font-weight:500;color:var(--txt);text-decoration:none;letter-spacing:.02em; }
+    .logo-bracket { color:var(--acc); }
+    .header-tagline { font-size:.7rem;color:var(--mut);font-family:var(--m);border-left:1px solid var(--bor);padding-left:20px;font-weight:300; }
+    .header-back {
+      margin-left:auto;background:transparent;border:1px solid rgba(255,255,255,.1);
+      color:var(--mut);padding:.35rem .9rem;border-radius:100px;font-family:var(--f);
+      font-size:.68rem;font-weight:700;cursor:none;transition:all .3s;letter-spacing:.05em;
+      text-transform:uppercase;text-decoration:none;
+    }
+    .header-back:hover { background:rgba(255,255,255,.06);color:var(--txt);border-color:rgba(255,255,255,.25); }
+
+    /* MAIN GRID */
+    .main-grid {
+      position:relative;z-index:10;
+      max-width:1400px;margin:0 auto;padding:24px;
+      display:grid;grid-template-columns:490px 1fr;
+      gap:18px;min-height:calc(100vh - 54px);
+    }
+
+    /* PANELS */
+    .panel, .panel-output {
+      background:rgba(8,13,28,.78);
+      backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
+      border:1px solid var(--bor);border-radius:14px;padding:26px;
+      position:relative;overflow:hidden;
+    }
+    .panel::before {
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:radial-gradient(circle at 0% 0%,rgba(99,102,241,.07) 0%,transparent 55%);
+    }
+    .panel-output::before {
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:radial-gradient(circle at 100% 0%,rgba(34,211,238,.06) 0%,transparent 55%);
+    }
+    .panel, .panel-output { overflow-y:auto;max-height:calc(100vh - 102px); }
+
+    /* STEP INDICATOR */
+    .step-indicator { display:flex;align-items:center;margin-bottom:26px; }
+    .step-pill {
+      display:flex;align-items:center;gap:8px;padding:7px 15px;
+      border-radius:100px;background:transparent;border:1px solid var(--bor);
+      cursor:pointer;transition:all .3s;
+    }
+    .step-pill.active { background:rgba(99,102,241,.12);border-color:var(--acc);box-shadow:0 0 14px rgba(99,102,241,.18); }
+    .step-num { font-family:var(--m);font-size:.68rem;font-weight:500;color:var(--mut); }
+    .step-pill.active .step-num { color:var(--acc); }
+    .step-label { font-size:.76rem;font-weight:700;color:var(--mut);letter-spacing:.01em; }
+    .step-pill.active .step-label { color:var(--txt); }
+    .step-connector { flex:1;height:1px;background:var(--bor);margin:0 8px;max-width:36px; }
+
+    /* LABELS */
+    .field-label {
+      font-family:var(--m);font-size:.65rem;font-weight:500;color:var(--mut);
+      letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:7px;
+    }
+    .field-label-sm {
+      font-family:var(--m);font-size:.62rem;color:var(--mut);letter-spacing:.08em;
+      text-transform:uppercase;display:block;margin-bottom:5px;
+    }
+    .field-hint { font-family:var(--m);font-size:.62rem;color:var(--mut);font-weight:300; }
+    .panel-section { margin-bottom:18px; }
+
+    /* INPUTS */
+    .text-input {
+      width:100%;background:rgba(12,18,38,.85);border:1px solid var(--bor);
+      border-radius:8px;padding:9px 13px;color:var(--txt);font-family:var(--m);
+      font-size:.8rem;font-weight:300;transition:all .25s;outline:none;
+    }
+    .text-input:focus { border-color:var(--acc);box-shadow:0 0 0 3px rgba(99,102,241,.14);background:rgba(99,102,241,.04); }
+    .text-input::placeholder { color:var(--mut); }
+
+    .code-textarea {
+      width:100%;background:rgba(0,0,0,.55);border:1px solid var(--bor);border-radius:8px;
+      padding:11px 13px;color:var(--grn);font-family:var(--m);font-size:.76rem;font-weight:300;
+      line-height:1.8;resize:vertical;transition:border-color .25s;outline:none;
+    }
+    .code-textarea:focus { border-color:var(--acc); }
+
+    /* BUTTONS */
+    .btn-primary {
+      width:100%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;border:none;
+      padding:11px 20px;border-radius:100px;font-family:var(--f);font-weight:700;font-size:.8rem;
+      cursor:none;transition:transform .3s,box-shadow .3s;letter-spacing:.03em;margin-top:6px;
+    }
+    .btn-primary:hover { transform:translateY(-2px);box-shadow:0 10px 28px rgba(99,102,241,.38); }
+    .btn-ghost {
+      background:transparent;border:1px solid var(--bor);color:var(--mut);padding:7px 14px;
+      border-radius:100px;font-family:var(--f);font-size:.74rem;font-weight:600;cursor:none;
+      transition:all .25s;letter-spacing:.02em;
+    }
+    .btn-ghost:hover { background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.2);color:var(--txt); }
+    .btn-ghost.hidden { display:none; }
+    .btn-ai { white-space:nowrap;border-color:rgba(99,102,241,.3);color:var(--acc); }
+    .btn-ai:hover { background:rgba(99,102,241,.1);border-color:var(--acc);color:var(--acc2); }
+    .btn-copy {
+      background:rgba(99,102,241,.1);border:1px solid var(--bor);color:var(--acc);
+      padding:4px 11px;border-radius:6px;font-family:var(--m);font-size:.66rem;
+      cursor:none;transition:all .2s;white-space:nowrap;
+    }
+    .btn-copy:hover { background:rgba(99,102,241,.2);border-color:var(--acc); }
+
+    .ai-schema-row { display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:9px; }
+
+    .step-block { animation:fadeIn .4s ease; }
+    .step-block.hidden { display:none; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+
+    /* AUTH */
+    .auth-toggle-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:11px; }
+    .switch { position:relative;display:inline-block;width:40px;height:21px; }
+    .switch input { opacity:0;width:0;height:0; }
+    .switch-slider {
+      position:absolute;cursor:none;inset:0;background:rgba(255,255,255,.08);
+      border:1px solid var(--bor);border-radius:100px;transition:.3s;
+    }
+    .switch-slider::before {
+      content:'';position:absolute;width:13px;height:13px;left:3px;bottom:3px;
+      background:var(--mut);border-radius:50%;transition:.3s;
+    }
+    input:checked + .switch-slider { background:rgba(99,102,241,.18);border-color:var(--acc); }
+    input:checked + .switch-slider::before { transform:translateX(19px);background:var(--acc); }
+    .auth-inner { background:rgba(0,0,0,.32);border:1px solid var(--bor);border-radius:10px;padding:15px; }
+
+    /* RESOURCE LIST */
+    #resource-list { margin:10px 0; }
+    .resource-chip {
+      display:inline-flex;align-items:center;gap:5px;background:rgba(99,102,241,.1);
+      border:1px solid rgba(99,102,241,.22);border-radius:100px;padding:3px 11px;
+      font-family:var(--m);font-size:.7rem;color:var(--acc2);margin:3px;
+    }
+
+    /* OUTPUT BLOCKS */
+    .output-block { margin-bottom:22px; }
+    .output-block-label {
+      font-family:var(--m);font-size:.6rem;color:var(--mut);letter-spacing:.14em;
+      text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:6px;
+    }
+    .output-block-label::before { content:'';width:9px;height:1px;background:var(--acc); }
+    .output-primary {
+      background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.18);border-radius:10px;padding:15px;
+    }
+    .preview-route-card { background:rgba(0,0,0,.42);border:1px solid var(--bor);border-radius:10px;padding:13px 15px; }
+    .preview-route-label { font-family:var(--m);font-size:.58rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px; }
+    .code-value { font-family:var(--m);font-size:.8rem;color:var(--acc2);word-break:break-all; }
+    .endpoint-list { display:flex;flex-direction:column;gap:5px; }
+    .endpoint-row {
+      display:flex;align-items:center;gap:9px;background:rgba(0,0,0,.35);
+      border:1px solid var(--bor2);border-radius:8px;padding:7px 11px;
+      font-family:var(--m);font-size:.74rem;
+    }
+    .method-badge { font-size:.63rem;font-weight:500;letter-spacing:.04em;padding:2px 7px;border-radius:4px;flex-shrink:0; }
+    .method-GET { color:var(--grn);background:rgba(16,185,129,.1); }
+    .method-POST { color:#60a5fa;background:rgba(96,165,250,.1); }
+    .method-PUT { color:#fb923c;background:rgba(251,146,60,.1); }
+    .method-DELETE { color:var(--red);background:rgba(239,68,68,.1); }
+
+    /* CODE ROW */
+    .code-row { display:flex;align-items:center;gap:9px;justify-content:space-between;flex-wrap:wrap; }
+    .session-note { font-family:var(--m);font-size:.64rem;color:var(--mut);margin-top:9px;line-height:1.7;font-weight:300; }
+    .schema-chips { display:flex;flex-wrap:wrap;gap:5px; }
+    .schema-chip {
+      background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.18);border-radius:6px;
+      padding:3px 9px;font-family:var(--m);font-size:.68rem;color:var(--acc2);
+    }
+    .expiry-value { font-family:var(--m);font-size:.8rem;color:var(--amb); }
+
+    /* TESTER */
+    .select-input {
+      width:100%;background:rgba(12,18,38,.85);border:1px solid var(--bor);border-radius:8px;
+      padding:8px 13px;color:var(--txt);font-family:var(--m);font-size:.76rem;
+      outline:none;cursor:none;transition:border-color .25s;
+    }
+    .select-input:focus { border-color:var(--acc); }
+    .tester-row { margin-bottom:11px; }
+    .tester-send-btn { margin-top:11px; }
+    .tester-response { margin-top:13px;background:rgba(0,0,0,.42);border:1px solid var(--bor);border-radius:8px;padding:13px; }
+    .tester-response-meta { display:flex;align-items:center;gap:9px;margin-bottom:9px; }
+    .response-label { font-family:var(--m);font-size:.6rem;color:var(--mut);letter-spacing:.1em;text-transform:uppercase; }
+    .status-badge { font-family:var(--m);font-size:.68rem;padding:2px 8px;border-radius:4px; }
+    .response-body { font-family:var(--m);font-size:.74rem;color:var(--grn);line-height:1.8;white-space:pre-wrap;word-break:break-all; }
+
+    /* LOGS */
+    .logs-empty { font-family:var(--m);font-size:.74rem;color:var(--mut);font-weight:300; }
+    .log-row {
+      display:grid;grid-template-columns:60px 50px 1fr 60px 50px;gap:8px;
+      padding:6px 11px;border-radius:6px;font-family:var(--m);font-size:.68rem;
+      background:rgba(255,255,255,.02);border:1px solid transparent;transition:all .2s;
+      animation:slideIn .3s ease;
+    }
+    .log-row:hover { background:rgba(99,102,241,.05);border-color:var(--bor2); }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:translateX(0)} }
+
+    .mGET { color:var(--grn); } .mPOST { color:#60a5fa; } .mDELETE { color:var(--red); } .mPUT { color:#fb923c; }
+    .s2c { color:var(--grn); } .s4c { color:var(--red); }
+
+    .hidden { display:none !important; }
+    .error-msg {
+      background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.22);border-radius:8px;
+      padding:9px 13px;font-family:var(--m);font-size:.74rem;color:var(--red);margin-bottom:11px;
+    }
+    .step2-actions { display:flex;gap:9px;margin-top:7px; }
+    .step2-actions .btn-ghost { flex:0; }
+    .step2-actions .btn-primary { flex:1; }
+
+    .mono { font-family:var(--m); }
+    #resource-form-label { color:var(--acc2) !important; }
+
+    /* CSS variable aliases so script.js inline styles work */
+    :root {
+      --text: #f8fafc;
+      --text-muted: #475569;
+      --mono: 'JetBrains Mono', monospace;
+      --accent: #6366f1;
+      --green: #10b981;
+      --red: #ef4444;
+    }
+
+    /* Protected routes */
+    .protected-route-item { display:flex;align-items:center;gap:7px;margin-bottom:5px;font-family:var(--m);font-size:.74rem;color:var(--mut); }
+    .protected-route-item input[type="checkbox"] { accent-color:var(--acc);cursor:none; }
+
+    /* Fetch snippet */
+    .fetch-snippet {
+      background:rgba(0,0,0,.5);border:1px solid var(--bor);border-radius:8px;
+      padding:13px;font-family:var(--m);font-size:.7rem;line-height:1.9;
+      color:var(--txt);margin-bottom:9px;overflow-x:auto;
+    }
+
+    /* ── script.js dynamically created classes ── */
+
+    /* resource card (saved resources list) */
+    .resource-card {
+      display:flex;align-items:center;gap:10px;
+      background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.18);
+      border-radius:8px;padding:9px 13px;margin-bottom:6px;transition:background .2s;
+    }
+    .resource-card:hover { background:rgba(99,102,241,.12); }
+    .resource-card-name { font-family:var(--m);font-size:.8rem;font-weight:500;color:var(--acc2); }
+    .resource-card-meta { font-family:var(--m);font-size:.68rem;color:var(--mut);font-weight:300;margin-top:2px; }
+
+    /* remove button */
+    .btn-remove {
+      background:transparent;border:1px solid rgba(239,68,68,.25);color:rgba(239,68,68,.6);
+      width:22px;height:22px;border-radius:50%;font-size:.7rem;cursor:none;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0;
+      transition:all .2s;margin-left:auto;
+    }
+    .btn-remove:hover { background:rgba(239,68,68,.15);border-color:var(--red);color:var(--red); }
+
+    /* endpoint items (inside output endpoints list) */
+    .endpoint-item { margin-bottom:8px; }
+    .endpoint-url { font-family:var(--m);font-size:.75rem;color:var(--txt);flex:1;word-break:break-all; }
+    .endpoint-method { font-size:.63rem;font-weight:500;letter-spacing:.04em;padding:2px 7px;border-radius:4px;flex-shrink:0; }
+    .endpoint-method.method-get   { color:var(--grn);background:rgba(16,185,129,.1); }
+    .endpoint-method.method-post  { color:#60a5fa;background:rgba(96,165,250,.1); }
+    .endpoint-method.method-put   { color:#fb923c;background:rgba(251,146,60,.1); }
+    .endpoint-method.method-delete{ color:var(--red);background:rgba(239,68,68,.1); }
+    .preview-endpoint-note { font-family:var(--m);font-size:.65rem;color:var(--mut);font-weight:300;margin-left:auto; }
+
+    /* curl / fetch code rows */
+    .curl-row {
+      display:flex;align-items:flex-start;gap:8px;
+      background:rgba(0,0,0,.45);border:1px solid var(--bor2);border-radius:8px;
+      padding:10px 12px;margin-top:5px;
+    }
+    .curl-code {
+      font-family:var(--m);font-size:.68rem;color:var(--grn);line-height:1.8;
+      white-space:pre-wrap;word-break:break-all;flex:1;
+    }
+
+    /* health dots */
+    .health-dot { font-size:.55rem;flex-shrink:0; }
+    .health-ok    { color:var(--grn); }
+    .health-warn  { color:var(--amb); }
+    .health-error { color:var(--red); }
+    .endpoint-resource-name { font-family:var(--m);font-size:.72rem;color:var(--acc2);font-weight:500; }
+    .endpoint-inline-status { font-family:var(--m);font-size:.65rem;color:var(--mut);margin-left:auto; }
+
+    /* reset records button */
+    .btn-reset-records {
+      background:transparent;border:1px solid var(--bor);color:var(--mut);
+      padding:3px 9px;border-radius:6px;font-family:var(--m);font-size:.65rem;
+      cursor:none;transition:all .2s;white-space:nowrap;margin-left:auto;
+    }
+    .btn-reset-records:hover { border-color:var(--red);color:var(--red);background:rgba(239,68,68,.07); }
+    .btn-reset-records:disabled { opacity:.5; }
+
+    /* step 2 resource sections */
+    .resource-section { margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid var(--bor2); }
+    .resource-section:last-child { border-bottom:none; }
+    .resource-section-heading {
+      display:flex;align-items:center;gap:8px;margin-bottom:12px;
+      padding:8px 12px;background:rgba(99,102,241,.06);border:1px solid var(--bor2);border-radius:8px;
+    }
+    .step2-schema-summary {
+      font-family:var(--m);font-size:.68rem;color:var(--mut);line-height:1.9;
+      margin-bottom:12px;font-weight:300;
+    }
+
+    /* status badge colors */
+    .status-2xx { background:rgba(16,185,129,.12);color:var(--grn);border:1px solid rgba(16,185,129,.2);padding:2px 8px;border-radius:4px; }
+    .status-4xx { background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);padding:2px 8px;border-radius:4px; }
+    .status-5xx { background:rgba(245,158,11,.1);color:var(--amb);border:1px solid rgba(245,158,11,.2);padding:2px 8px;border-radius:4px; }
+
+    /* copy button copied state */
+    .btn-copy.copied { background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.3);color:var(--grn); }
+
+    /* logs table */
+    .logs-table { width:100%;border-collapse:collapse;font-family:var(--m);font-size:.7rem; }
+    .logs-table thead tr { border-bottom:1px solid var(--bor); }
+    .logs-table th { color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-size:.6rem;padding:5px 8px;text-align:left;font-weight:500; }
+    .logs-table td { padding:6px 8px;border-bottom:1px solid var(--bor2);color:var(--txt); }
+    .logs-table tr:hover td { background:rgba(99,102,241,.04); }
+    .log-status-green { color:var(--grn) !important; }
+    .log-status-red { color:var(--red) !important; }
+
+    /* ai records btn (built in buildStep2) */
+    #resource-sections .btn-ghost { margin-bottom:8px; }
+
+    ::-webkit-scrollbar { width:5px;height:5px; }
+    ::-webkit-scrollbar-track { background:rgba(255,255,255,.02); }
+    ::-webkit-scrollbar-thumb { background:rgba(99,102,241,.25);border-radius:3px; }
+  </style>
+</head>
+<body>
+
+<div id="cur"></div>
+<div id="cur2"></div>
+
+<canvas id="bg-canvas"></canvas>
+<div id="bg-vig"></div>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <a href="landing.html" class="logo">
+      <span class="logo-bracket">[</span>MockDock<span class="logo-bracket">]</span>
+    </a>
+    <div class="header-tagline">zero-change mock backend for frontend devs</div>
+    <a href="landing.html" class="header-back">← Home</a>
+  </div>
+</header>
+
+<main class="main-grid">
+
+  <!-- LEFT PANEL: BUILDER -->
+  <section class="panel panel-builder" id="builder-panel">
+
+    <div class="step-indicator">
+      <div class="step-pill active" id="step-pill-1">
+        <span class="step-num">01</span>
+        <span class="step-label">Define Resource</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-pill" id="step-pill-2">
+        <span class="step-num">02</span>
+        <span class="step-label">Seed Records</span>
+      </div>
+    </div>
+
+    <!-- STEP 1 -->
+    <div class="step-block" id="step-1">
+      <div class="panel-section">
+        <label class="field-label">Namespace</label>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <input type="text" id="input-namespace" class="text-input" placeholder="team-demo" autocomplete="off" />
+          <span id="namespace-availability" class="field-hint"></span>
+          <button type="button" id="namespace-randomize" class="btn-ghost hidden">Randomize</button>
+        </div>
+      </div>
+
+      <div class="panel-section" style="margin-bottom:8px;">
+        <span id="resource-form-label" class="field-label">Resource 1</span>
+      </div>
+
+      <div class="panel-section">
+        <label class="field-label">Resource Name</label>
+        <input type="text" id="input-resource" class="text-input" placeholder="users" autocomplete="off" />
+      </div>
+
+      <div class="panel-section">
+        <label class="field-label">Route Path <span class="field-hint">must start with /</span></label>
+        <input type="text" id="input-route" class="text-input" placeholder="/api/users" autocomplete="off" />
+      </div>
+
+      <div class="panel-section">
+        <label class="field-label">Schema</label>
+        <div id="schema-json-mode">
+          <div class="ai-schema-row">
+            <input type="text" id="ai-schema-prompt" class="text-input" placeholder="Describe your resource, e.g. a user with name, age and email" autocomplete="off" />
+            <button type="button" id="ai-generate-btn" class="btn-ghost btn-ai" onclick="generateSchemaWithAI()">✨ Generate with AI</button>
+          </div>
+          <div class="field-hint" id="ai-schema-status"></div>
+          <textarea id="schema-json-input" class="code-textarea" rows="6" placeholder='{"name":"string","age":"integer","email":{"type":"string","format":"email"},"role":{"enum":["admin","user"]}}'></textarea>
+          <div class="field-hint" id="json-parse-status"></div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="auth-toggle-row">
+          <label class="field-label">Auth <span class="field-hint">optional</span></label>
+          <label class="switch">
+            <input type="checkbox" id="auth-toggle" onchange="toggleAuth()" />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+        <div id="auth-config" class="hidden">
+          <div class="auth-inner">
+            <label class="field-label-sm">Login Route</label>
+            <input type="text" id="input-login-route" class="text-input" placeholder="/api/login" autocomplete="off" />
+            <label class="field-label-sm" style="margin-top:11px">Token</label>
+            <input type="text" id="input-token" class="text-input" placeholder="mock_abc123" autocomplete="off" />
+            <label class="field-label-sm" style="margin-top:11px">Protected Routes <span class="field-hint">will be populated from route path above</span></label>
+            <div id="protected-routes-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="resource-list"></div>
+      <button type="button" id="add-resource-btn" class="btn-ghost" onclick="saveAndAddResource()" style="margin-bottom:13px;">+ Add Another Resource</button>
+
+      <div id="step1-error" class="error-msg hidden"></div>
+      <button class="btn-primary" onclick="goToStep2()">Continue to Seed Records →</button>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step-block hidden" id="step-2">
+      <div id="resource-sections"></div>
+      <div id="step2-error" class="error-msg hidden"></div>
+      <div class="step2-actions">
+        <button class="btn-ghost" onclick="goBackToStep1()">← Back</button>
+        <button class="btn-primary" id="submit-btn" onclick="submitCreate()">Generate Mock API</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- RIGHT PANEL: PREVIEW + OUTPUT -->
+  <section class="panel panel-preview" id="preview-panel">
+    <div class="output-block">
+      <div class="output-block-label">Live Route Preview</div>
+      <div class="preview-route-card">
+        <div class="preview-route-label">Route Path</div>
+        <code id="preview-route-path" class="code-value">{route_path}</code>
+      </div>
+    </div>
+    <div class="output-block">
+      <div class="output-block-label">Generated Endpoints</div>
+      <div id="preview-endpoints" class="endpoint-list"></div>
+    </div>
+  </section>
+
+  <section class="panel-output hidden" id="output-panel">
+
+    <div class="output-block output-primary">
+      <div class="output-block-label">Your script tag — paste this into your HTML</div>
+      <div class="code-row">
+        <code id="output-script-tag" class="code-value"></code>
+        <button class="btn-copy" onclick="copyText('output-script-tag', this)">Copy</button>
+      </div>
+      <div class="session-note">
+        ℹ Records added via your frontend during testing are session-only and will reset on refresh. Use the inline tester below to permanently add records to MockDock.
+      </div>
+    </div>
+
+    <div class="output-block">
+      <div class="output-block-label">Schema</div>
+      <div id="output-schema-summary" class="schema-chips"></div>
+    </div>
+
+    <div class="output-block hidden" id="output-token-block">
+      <div class="output-block-label">Access Token</div>
+      <div class="code-row">
+        <code id="output-token-value" class="code-value"></code>
+        <button class="btn-copy" onclick="copyText('output-token-value', this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="output-block">
+      <div class="output-block-label">Expires</div>
+      <div id="output-expiry" class="expiry-value mono"></div>
+    </div>
+
+    <div class="output-block">
+      <div class="output-block-label">Endpoints — for curl / direct testing</div>
+      <div id="output-endpoints" class="endpoint-list"></div>
+    </div>
+
+    <div class="output-block" id="output-fetch-block">
+      <div class="output-block-label">Fetch Snippet</div>
+      <div id="output-fetch-snippets"></div>
+    </div>
+
+    <div class="output-block">
+      <div class="output-block-label">Inline API Tester</div>
+      <div class="tester-row">
+        <select id="tester-method-select" class="select-input" onchange="onTesterMethodChange()"></select>
+      </div>
+      <div id="tester-body-wrap" class="hidden">
+        <label class="field-label-sm">Request Body (JSON)</label>
+        <textarea id="tester-body" class="code-textarea" rows="5"></textarea>
+      </div>
+      <div id="tester-auth-wrap" class="hidden">
+        <label class="field-label-sm">Authorization Header</label>
+        <input type="text" id="tester-auth-header" class="text-input" placeholder="Bearer mock_abc123" />
+      </div>
+      <button class="btn-primary tester-send-btn" onclick="sendTestRequest()">Send Request</button>
+      <div id="tester-response" class="hidden">
+        <div class="tester-response-meta">
+          <span class="response-label">Response</span>
+          <span id="tester-status-badge" class="status-badge"></span>
+        </div>
+        <pre id="tester-response-body" class="response-body"></pre>
+      </div>
+    </div>
+
+    <div class="output-block" id="output-logs-block">
+      <div class="output-block-label">Request Logs</div>
+      <div id="output-logs-empty" class="logs-empty">No requests logged yet.</div>
+      <div id="output-logs-table"></div>
+    </div>
+
+  </section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ══ THREE.JS BG ══
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000,0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(0,0,9);
+
+  const aL = new THREE.AmbientLight(0x6366f1, 0.3); scene.add(aL);
+  const p1 = new THREE.PointLight(0x22d3ee, 2.5, 25); p1.position.set(5,5,4); scene.add(p1);
+  const p2 = new THREE.PointLight(0xf472b6, 1.8, 20); p2.position.set(-5,-4,3); scene.add(p2);
+  const p3 = new THREE.PointLight(0x6366f1, 2, 18);   p3.position.set(0,6,-2); scene.add(p3);
+  const p4 = new THREE.PointLight(0x10b981, 1.2, 16); p4.position.set(-6,0,2); scene.add(p4);
+
+  const mI = new THREE.MeshStandardMaterial({color:0x6366f1,metalness:.85,roughness:.1,emissive:0x2020ff,emissiveIntensity:.06});
+  const mC = new THREE.MeshStandardMaterial({color:0x22d3ee,metalness:.9,roughness:.08,emissive:0x00aaff,emissiveIntensity:.08});
+  const mP = new THREE.MeshStandardMaterial({color:0xf472b6,metalness:.75,roughness:.18,emissive:0xff0066,emissiveIntensity:.05});
+  const mG = new THREE.MeshStandardMaterial({color:0x10b981,metalness:.8,roughness:.12,emissive:0x00ff88,emissiveIntensity:.05});
+  const mA = new THREE.MeshStandardMaterial({color:0xf59e0b,metalness:.9,roughness:.08,emissive:0xff8800,emissiveIntensity:.07});
+  const mW = new THREE.MeshStandardMaterial({color:0x6366f1,transparent:true,opacity:.15,wireframe:true});
+
+  const objs = [];
+  function add(geo, mat, pos, rot, params, wireGeo) {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(...pos);
+    if(rot) m.rotation.set(...rot);
+    scene.add(m);
+    let w = null;
+    if(wireGeo){ w = new THREE.Mesh(wireGeo, mW); w.position.copy(m.position); scene.add(w); }
+    objs.push({mesh:m, wire:w, ...params, baseY:pos[1]});
+  }
+
+  add(new THREE.IcosahedronGeometry(1.1,1),mI,[5.5,1.2,-1],[0,0,0],{rx:.006,ry:.009,rz:.004,float:{amp:.18,spd:.7,off:0}},new THREE.IcosahedronGeometry(1.15,1));
+  add(new THREE.TorusGeometry(.8,.26,18,50),mC,[-5.5,2,-1.5],[.5,0,0],{rx:.008,ry:.012,rz:.003,float:{amp:.14,spd:.55,off:1.2}});
+  add(new THREE.OctahedronGeometry(.75),mP,[6.5,-2.5,-.5],[0,0,0],{rx:.01,ry:.007,rz:.008,float:{amp:.16,spd:.85,off:2.1}});
+  add(new THREE.TorusKnotGeometry(.6,.18,110,14,2,3),mG,[-5,-2,.5],[0,0,0],{rx:.007,ry:.011,rz:.005,float:{amp:.12,spd:.65,off:3.5}});
+  add(new THREE.DodecahedronGeometry(.55),mA,[4.5,3.5,-2],[0,0,0],{rx:.009,ry:.006,rz:.007,float:{amp:.1,spd:.9,off:.8}});
+  [[-4.5,3.5,-2],[5.2,-1.5,-2],[0,-4.5,-1.5]].forEach((pos,i)=>{
+    add(new THREE.IcosahedronGeometry(.22+i*.04,0),[mC,mP,mI][i],pos,[0,0,0],{rx:.013+i*.002,ry:.016,rz:.009,float:{amp:.07,spd:1.1+i*.2,off:i*1.5}});
+  });
+
+  const pg = new THREE.BufferGeometry();
+  const pp = new Float32Array(280*3);
+  for(let i=0;i<280*3;i++) pp[i]=(Math.random()-.5)*22;
+  pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+  scene.add(new THREE.Points(pg,new THREE.PointsMaterial({size:.032,color:0x6366f1,transparent:true,opacity:.4})));
+
+  let mx=0,my=0;
+  document.addEventListener('mousemove',e=>{ mx=(e.clientX/window.innerWidth-.5)*2; my=-(e.clientY/window.innerHeight-.5)*2; });
+  window.addEventListener('resize',()=>{ camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
+
+  const clk = new THREE.Clock();
+  (function animate(){
+    requestAnimationFrame(animate);
+    const t=clk.getElapsedTime();
+    objs.forEach(o=>{
+      o.mesh.rotation.x+=o.rx; o.mesh.rotation.y+=o.ry; o.mesh.rotation.z+=o.rz;
+      o.mesh.position.y=o.baseY+Math.sin(t*o.float.spd+o.float.off)*o.float.amp;
+      if(o.wire){o.wire.rotation.copy(o.mesh.rotation);o.wire.position.copy(o.mesh.position);}
+    });
+    camera.position.x+=(mx*.38-camera.position.x)*.028;
+    camera.position.y+=(my*.28-camera.position.y)*.028;
+    p1.position.x=Math.sin(t*.42)*6; p1.position.y=Math.cos(t*.33)*5;
+    p2.position.x=Math.cos(t*.26)*-6; p2.position.y=Math.sin(t*.52)*-4;
+    renderer.render(scene,camera);
+  })();
+})();
+
+// CURSOR
+const cur=document.getElementById('cur'),cur2=document.getElementById('cur2');
+let mx=0,my=0,tx=0,ty=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function loop(){tx+=(mx-tx)*.1;ty+=(my-ty)*.1;cur2.style.left=tx+'px';cur2.style.top=ty+'px';requestAnimationFrame(loop);})();
+</script>
+
+<script src="script.js"></script>
+</body>
+</html>

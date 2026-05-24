@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expenses — MockDock Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!--
+  ═══════════════════════════════════════════════════════════════
+  MOCKDOCK TEST — EXPENSE TRACKER
+  ═══════════════════════════════════════════════════════════════
+  STEP 1: Go to https://mockdoc.onrender.com
+  STEP 2: Create resource with these settings:
+    • Resource name : expenses
+    • Route path   : /api/expenses
+    • Schema       : title: string, amount: number,
+                     category: string, paid: boolean
+  STEP 3: Seed 4–5 records
+  STEP 4: Copy the script tag and paste it BELOW this comment block
+
+  PASTE MOCKDOCK SCRIPT TAG HERE ↓
+  <script src="https://mockdoc.onrender.com/interceptor/YOURCODE.js"></script>
+  ═══════════════════════════════════════════════════════════════
+  -->
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #f7f5f0;
+      --paper:   #ffffff;
+      --warm:    #f0ece3;
+      --border:  #e4dfd4;
+      --bhi:     #cdc7bb;
+      --ink:     #1c1a17;
+      --ink-soft:#2e2b26;
+      --muted:   #7a7568;
+      --dim:     #a09890;
+      --teal:    #1a7a6e;
+      --teal-dim:rgba(26,122,110,.08);
+      --teal-mid:rgba(26,122,110,.2);
+      --rust:    #c0442a;
+      --rust-dim:rgba(192,68,42,.08);
+      --amber:   #c07a1a;
+      --amb-dim: rgba(192,122,26,.1);
+      --shadow:  0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+      --mono:    'JetBrains Mono', monospace;
+      --body:    'Outfit', sans-serif;
+      --serif:   'Instrument Serif', serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--body);
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--ink);
+      padding: 32px 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .brand-line {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: rgba(255,255,255,.35);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 400;
+      font-style: italic;
+      color: #f7f5f0;
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
+    h1 em { font-style: normal; color: rgba(255,255,255,.4); font-family: var(--body); font-size: 60%; vertical-align: middle; margin-left: 8px; }
+
+    .status-chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 4px;
+      padding: 8px 14px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: rgba(255,255,255,.4);
+    }
+    .sdot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.2); transition: all .3s; }
+    .sdot.live { background: #52c47a; box-shadow: 0 0 8px #52c47a; }
+    .sdot.err  { background: #f87171; }
+
+    /* ── SUMMARY STRIP ── */
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    @media(max-width:700px){ .summary{ grid-template-columns:1fr 1fr; } }
+    .sum-cell {
+      padding: 20px 28px;
+      border-right: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .sum-cell:last-child { border-right: none; }
+    .sum-label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .sum-val { font-family: var(--serif); font-size: 26px; color: var(--ink); letter-spacing: -.5px; }
+    .sum-val.teal  { color: var(--teal); }
+    .sum-val.rust  { color: var(--rust); }
+    .sum-val.amber { color: var(--amber); }
+
+    /* ── LAYOUT ── */
+    .layout { display: grid; grid-template-columns: 1fr 360px; min-height: calc(100vh - 200px); }
+    @media(max-width:860px){ .layout{ grid-template-columns:1fr; } }
+
+    /* ── EXPENSE LIST ── */
+    .list-panel { padding: 28px 36px; }
+
+    .list-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+    .list-title { font-family: var(--serif); font-size: 22px; font-style: italic; color: var(--ink); }
+    .cats { display: flex; gap: 6px; flex-wrap: wrap; }
+    .cat-btn {
+      font-family: var(--mono); font-size: 10px;
+      padding: 4px 12px; border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+      cursor: pointer; transition: all .15s; letter-spacing: .5px;
+    }
+    .cat-btn.active, .cat-btn:hover {
+      border-color: var(--teal-mid); color: var(--teal); background: var(--teal-dim);
+    }
+
+    /* EXPENSE ROWS */
+    .expense-list { display: flex; flex-direction: column; gap: 0; }
+
+    .expense-row {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+      animation: rowIn .2s ease both;
+      transition: background .12s;
+    }
+    @keyframes rowIn { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
+    .expense-row:last-child { border-bottom: none; }
+    .expense-row.paid-row { opacity: .6; }
+
+    .cat-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .cat-Food     { background: #e8a84b; }
+    .cat-Travel   { background: #4b8de8; }
+    .cat-Shopping { background: #a84be8; }
+    .cat-Bills    { background: #e84b4b; }
+    .cat-Health   { background: #4be88a; }
+    .cat-Other    { background: #8a8a8a; }
+
+    .exp-main { flex: 1; }
+    .exp-title { font-size: 14px; font-weight: 500; color: var(--ink); }
+    .exp-meta  { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .exp-title.paid-txt { text-decoration: line-through; color: var(--muted); }
+
+    .exp-amount { font-family: var(--serif); font-size: 18px; color: var(--ink); min-width: 80px; text-align: right; }
+    .exp-amount.paid-amt { color: var(--teal); }
+
+    .paid-toggle {
+      height: 28px; padding: 0 12px;
+      font-family: var(--mono); font-size: 10px;
+      border-radius: 20px; cursor: pointer;
+      transition: all .15s; white-space: nowrap;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--muted);
+    }
+    .paid-toggle:hover { border-color: var(--teal-mid); color: var(--teal); }
+    .paid-toggle.is-paid { background: var(--teal-dim); border-color: var(--teal-mid); color: var(--teal); }
+
+    .del-x {
+      width: 28px; height: 28px; border-radius: 4px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--dim); cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .12s; flex-shrink: 0;
+    }
+    .del-x:hover { background: var(--rust-dim); border-color: rgba(192,68,42,.3); color: var(--rust); }
+
+    /* INLINE EDIT */
+    .exp-edit-row {
+      display: none; padding: 12px 16px; margin: 0 -16px;
+      background: var(--warm); border: 1px solid var(--border);
+      border-radius: 8px; gap: 10px; flex-wrap: wrap; align-items: center;
+    }
+    .exp-edit-row.open { display: flex; }
+    .ee-inp {
+      background: var(--paper); border: 1px solid var(--border);
+      border-radius: 5px; outline: none; padding: 0 10px;
+      height: 32px; font-family: var(--body); font-size: 13px;
+      color: var(--ink); transition: border-color .2s;
+    }
+    .ee-inp:focus { border-color: var(--teal); }
+    .ee-inp.wide { flex: 1; min-width: 120px; }
+    .ee-inp.narrow { width: 90px; }
+    .btn-ee-save {
+      height: 32px; padding: 0 14px;
+      background: var(--teal); color: #fff;
+      border: none; border-radius: 5px;
+      font-family: var(--mono); font-size: 11px;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .btn-ee-save:hover { opacity: .85; }
+    .btn-ee-save:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-ee-cancel {
+      height: 32px; padding: 0 12px;
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 5px;
+      font-family: var(--mono); font-size: 11px;
+      cursor: pointer; transition: all .15s;
+    }
+    .btn-ee-cancel:hover { color: var(--ink); border-color: var(--bhi); }
+    .ee-msg { font-family: var(--mono); font-size: 11px; }
+    .ee-msg.ok  { color: var(--teal); }
+    .ee-msg.err { color: var(--rust); }
+
+    /* STATE BOXES */
+    .state-box { padding: 60px 20px; text-align: center; }
+    .spinner {
+      width: 24px; height: 24px; border: 2px solid var(--border);
+      border-top-color: var(--teal); border-radius: 50%;
+      animation: spin .7s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes spin { to{ transform:rotate(360deg); } }
+    .state-t { font-family: var(--serif); font-size: 18px; font-style: italic; color: var(--muted); margin-bottom: 6px; }
+    .state-s { font-size: 13px; color: var(--dim); }
+    .state-c { font-family: var(--mono); font-size: 11px; color: var(--rust); margin-top: 8px; }
+
+    /* ── SIDEBAR: ADD EXPENSE ── */
+    .add-panel {
+      border-left: 1px solid var(--border);
+      background: var(--paper);
+      padding: 28px 24px;
+      display: flex; flex-direction: column; gap: 0;
+    }
+    .add-title { font-family: var(--serif); font-size: 20px; font-style: italic; margin-bottom: 20px; }
+
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 13px; }
+    .field label { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+    .field input, .field select {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      outline: none; padding: 0 12px; height: 40px;
+      font-family: var(--body); font-size: 13px; color: var(--ink);
+      transition: border-color .2s; width: 100%;
+    }
+    .field input:focus, .field select:focus { border-color: var(--teal); }
+    .field input::placeholder { color: var(--dim); }
+    .field select { cursor: pointer; }
+
+    .paid-check-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 13px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      margin-bottom: 16px; cursor: pointer;
+    }
+    .paid-check-row input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--teal); cursor: pointer; }
+    .paid-check-label { font-size: 13px; color: var(--muted); }
+
+    .add-btn {
+      width: 100%; height: 44px;
+      background: var(--ink); color: var(--bg);
+      border: none; border-radius: 6px;
+      font-family: var(--body); font-size: 14px; font-weight: 500;
+      cursor: pointer; letter-spacing: .2px;
+      transition: opacity .15s, transform .12s;
+    }
+    .add-btn:hover { opacity: .88; transform: translateY(-1px); }
+    .add-btn:disabled { opacity: .35; cursor: not-allowed; transform: none; }
+
+    .add-fb {
+      font-family: var(--mono); font-size: 11px; margin-top: 10px;
+      padding: 8px 12px; border-radius: 4px; display: none;
+    }
+    .add-fb.ok  { background: var(--teal-dim); color: var(--teal); display: block; }
+    .add-fb.err { background: var(--rust-dim); color: var(--rust); display: block; }
+
+    /* LOG */
+    .log-sec { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .log-hd  { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+    .log-item {
+      display: flex; align-items: center; gap: 7px;
+      padding: 6px 9px; border-radius: 4px;
+      background: var(--bg); border: 1px solid var(--border);
+      margin-bottom: 4px; font-family: var(--mono); font-size: 10px;
+      animation: pop .18s ease;
+    }
+    @keyframes pop { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+    .lm { font-weight: 500; min-width: 46px; }
+    .lm-GET    { color: #4b8de8; }
+    .lm-POST   { color: var(--teal); }
+    .lm-PUT    { color: var(--amber); }
+    .lm-DELETE { color: var(--rust); }
+    .lp { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ls { font-weight: 500; }
+    .ls-ok  { color: var(--teal); }
+    .ls-err { color: var(--rust); }
+    .lt { color: var(--dim); margin-left: auto; white-space: nowrap; }
+
+    /* CALLING STRIP */
+    .strip {
+      position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 999;
+      background: linear-gradient(90deg, transparent, var(--teal), transparent);
+      background-size: 200% 100%; animation: shimmer 1s ease infinite; display: none;
+    }
+    .strip.on { display: block; }
+    @keyframes shimmer { 0%{background-position:200% 0}100%{background-position:-200% 0} }
+
+    /* TOAST */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--ink); color: var(--bg);
+      font-family: var(--mono); font-size: 12px;
+      padding: 10px 18px; border-radius: 6px;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none; z-index: 998;
+    }
+    .toast.show { opacity: 1; transform: none; }
+
+    @media(max-width:600px){
+      header { padding: 20px; }
+      .list-panel { padding: 20px; }
+      .add-panel  { padding: 20px; border-left: none; border-top: 1px solid var(--border); }
+      .summary    { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="strip" id="strip"></div>
+
+<!-- HEADER -->
+<header>
+  <div>
+    <div class="brand-line">MockDock Test — Project 2</div>
+    <h1>Expense Tracker <em>fetch('/api/expenses')</em></h1>
+  </div>
+  <div class="status-chip">
+    <div class="sdot" id="sdot"></div>
+    <span id="stxt">loading…</span>
+  </div>
+</header>
+
+<!-- SUMMARY STRIP -->
+<div class="summary">
+  <div class="sum-cell">
+    <div class="sum-label">Total expenses</div>
+    <div class="sum-val" id="sumTotal">—</div>
+  </div>
+  <div class="sum-cell">
+    <div class="sum-label">Paid</div>
+    <div class="sum-val teal" id="sumPaid">—</div>
+  </div>
+  <div class="sum-cell">
+    <div class="sum-label">Unpaid</div>
+    <div class="sum-val rust" id="sumUnpaid">—</div>
+  </div>
+  <div class="sum-cell">
+    <div class="sum-label">Records</div>
+    <div class="sum-val amber" id="sumCount">—</div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- LIST -->
+  <section class="list-panel">
+    <div class="list-toolbar">
+      <div class="list-title">All Expenses</div>
+      <div class="cats">
+        <button class="cat-btn active" data-cat="all">All</button>
+        <button class="cat-btn" data-cat="Food">Food</button>
+        <button class="cat-btn" data-cat="Travel">Travel</button>
+        <button class="cat-btn" data-cat="Shopping">Shopping</button>
+        <button class="cat-btn" data-cat="Bills">Bills</button>
+        <button class="cat-btn" data-cat="Health">Health</button>
+        <button class="cat-btn" data-cat="Other">Other</button>
+      </div>
+    </div>
+    <div id="expenseList">
+      <div class="state-box">
+        <div class="spinner"></div>
+        <div class="state-t">Loading expenses…</div>
+        <div class="state-s">Calling GET /api/expenses via MockDock interceptor</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADD PANEL -->
+  <aside class="add-panel">
+    <div class="add-title">Add Expense</div>
+
+    <div class="field">
+      <label>Title</label>
+      <input id="f-title" type="text" placeholder="e.g. Lunch at cafe" />
+    </div>
+    <div class="field">
+      <label>Amount (₹)</label>
+      <input id="f-amount" type="number" placeholder="e.g. 350" min="0" />
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="f-category">
+        <option value="">Select category</option>
+        <option>Food</option>
+        <option>Travel</option>
+        <option>Shopping</option>
+        <option>Bills</option>
+        <option>Health</option>
+        <option>Other</option>
+      </select>
+    </div>
+
+    <label class="paid-check-row">
+      <input type="checkbox" id="f-paid" />
+      <span class="paid-check-label">Already paid</span>
+    </label>
+
+    <button class="add-btn" id="addBtn">POST /api/expenses</button>
+    <div class="add-fb" id="addFb"></div>
+
+    <!-- LOG -->
+    <div class="log-sec">
+      <div class="log-hd">Request Log</div>
+      <div id="logItems"></div>
+    </div>
+  </aside>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="https://mockdoc-mxvm.onrender.com/interceptor/testdemoo.js"></script>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────
+let allExpenses  = [];
+let activeCat    = "all";
+let logs         = [];
+
+// ── CATEGORY FILTER ───────────────────────────────────────────
+document.querySelectorAll(".cat-btn").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".cat-btn").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    activeCat = b.dataset.cat;
+    renderList();
+  });
+});
+
+// ── API ───────────────────────────────────────────────────────
+async function api(method, path, body) {
+  document.getElementById("strip").classList.add("on");
+  const t0 = Date.now();
+  let status = 0, data = null;
+  try {
+    const opts = { method, headers: { "Content-Type": "application/json" } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    status = res.status;
+    try { data = await res.json(); } catch { data = null; }
+  } catch(e) {
+    data = { error: e.message };
+  } finally {
+    document.getElementById("strip").classList.remove("on");
+  }
+  addLog(method, path, status, Date.now() - t0);
+  return { ok: status >= 200 && status < 300, status, data };
+}
+
+// ── LOAD ──────────────────────────────────────────────────────
+async function load() {
+  setStatus("loading");
+  const { ok, status, data } = await api("GET", "/api/expenses");
+  if (ok && Array.isArray(data)) {
+    allExpenses = data;
+    setStatus("live");
+    renderList();
+    updateSummary();
+  } else {
+    setStatus("err");
+    showErr(status, data);
+  }
+}
+
+// ── RENDER LIST ───────────────────────────────────────────────
+function renderList() {
+  const filtered = allExpenses.filter(e =>
+    activeCat === "all" ? true : (e.category || "Other") === activeCat
+  );
+
+  if (filtered.length === 0) {
+    document.getElementById("expenseList").innerHTML = `
+      <div class="state-box">
+        <div class="state-t">No expenses</div>
+        <div class="state-s">${activeCat !== "all" ? "No expenses in this category." : "Add your first expense using the form."}</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById("expenseList").innerHTML = `
+    <div class="expense-list">
+      ${filtered.map((e, i) => {
+        const cat   = e.category || "Other";
+        const paid  = e.paid === true;
+        return `
+        <div class="expense-row${paid ? " paid-row" : ""}" style="animation-delay:${i*0.04}s">
+          <div class="cat-dot cat-${cat.replace(/\s/g,'')}"></div>
+          <div class="exp-main">
+            <div class="exp-title${paid ? " paid-txt" : ""}">${esc(e.title || "—")}</div>
+            <div class="exp-meta">${esc(cat)} · ID ${e.id}</div>
+          </div>
+          <div class="exp-amount${paid ? " paid-amt" : ""}">₹${Number(e.amount||0).toLocaleString("en-IN")}</div>
+          <button class="paid-toggle${paid ? " is-paid" : ""}" onclick="togglePaid(${e.id}, ${paid})">
+            ${paid ? "✓ paid" : "mark paid"}
+          </button>
+          <button class="del-x" onclick="delExpense(${e.id})" title="DELETE">✕</button>
+        </div>
+        <div class="exp-edit-row" id="er-${e.id}">
+          <input class="ee-inp wide"   id="ee-t-${e.id}" value="${esc(e.title||'')}"    placeholder="Title" />
+          <input class="ee-inp narrow" id="ee-a-${e.id}" value="${e.amount||''}" type="number" placeholder="Amount" />
+          <input class="ee-inp narrow" id="ee-c-${e.id}" value="${esc(e.category||'')}"  placeholder="Category" />
+          <button class="btn-ee-save"   onclick="saveExpense(${e.id})">PUT</button>
+          <button class="btn-ee-cancel" onclick="closeEdit(${e.id})">Cancel</button>
+          <span class="ee-msg" id="ee-m-${e.id}"></span>
+        </div>`;
+      }).join("")}
+    </div>`;
+
+  // double-click to open edit
+  document.querySelectorAll(".expense-row").forEach(row => {
+    row.addEventListener("dblclick", () => {
+      const id = row.querySelector(".exp-meta").textContent.match(/ID (\d+)/)?.[1];
+      if (id) openEdit(Number(id));
+    });
+  });
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────
+function updateSummary() {
+  const total   = allExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const paid    = allExpenses.filter(e => e.paid).reduce((s, e) => s + Number(e.amount || 0), 0);
+  const unpaid  = total - paid;
+  document.getElementById("sumTotal").textContent  = "₹" + total.toLocaleString("en-IN");
+  document.getElementById("sumPaid").textContent   = "₹" + paid.toLocaleString("en-IN");
+  document.getElementById("sumUnpaid").textContent = "₹" + unpaid.toLocaleString("en-IN");
+  document.getElementById("sumCount").textContent  = allExpenses.length;
+}
+
+// ── TOGGLE PAID — PUT ─────────────────────────────────────────
+async function togglePaid(id, currentPaid) {
+  const exp  = allExpenses.find(e => e.id === id);
+  if (!exp) return;
+  const body = { title: exp.title, amount: exp.amount, category: exp.category, paid: !currentPaid };
+  const { ok, status, data } = await api("PUT", `/api/expenses/${id}`, body);
+  if (ok) {
+    toast(`Expense ${id} marked ${!currentPaid ? "paid" : "unpaid"} via PUT`);
+    await load();
+  } else {
+    toast(`PUT failed — ${status}: ${errMsg(data)}`);
+  }
+}
+
+// ── INLINE EDIT — PUT ─────────────────────────────────────────
+function openEdit(id)  { document.getElementById(`er-${id}`)?.classList.add("open"); }
+function closeEdit(id) { document.getElementById(`er-${id}`)?.classList.remove("open"); }
+
+async function saveExpense(id) {
+  const exp  = allExpenses.find(e => e.id === id);
+  const body = {
+    title:    document.getElementById(`ee-t-${id}`).value.trim(),
+    amount:   Number(document.getElementById(`ee-a-${id}`).value),
+    category: document.getElementById(`ee-c-${id}`).value.trim(),
+    paid:     exp?.paid ?? false,
+  };
+  const saveBtn = document.querySelector(`#er-${id} .btn-ee-save`);
+  const msg     = document.getElementById(`ee-m-${id}`);
+  saveBtn.disabled = true;
+  msg.textContent = "saving…"; msg.className = "ee-msg";
+  const { ok, status, data } = await api("PUT", `/api/expenses/${id}`, body);
+  saveBtn.disabled = false;
+  if (ok) {
+    msg.textContent = "✓ saved"; msg.className = "ee-msg ok";
+    await load();
+    toast(`Expense ${id} updated via PUT`);
+  } else {
+    msg.textContent = `✕ ${status}`; msg.className = "ee-msg err";
+  }
+}
+
+// ── DELETE ────────────────────────────────────────────────────
+async function delExpense(id) {
+  if (!confirm(`DELETE /api/expenses/${id} — confirm?`)) return;
+  const { ok, status, data } = await api("DELETE", `/api/expenses/${id}`);
+  if (ok) {
+    toast(`Expense ${id} deleted`);
+    await load();
+  } else {
+    toast(`Delete failed — ${status}: ${errMsg(data)}`);
+  }
+}
+
+// ── POST ──────────────────────────────────────────────────────
+document.getElementById("addBtn").addEventListener("click", async () => {
+  const body = {
+    title:    document.getElementById("f-title").value.trim(),
+    amount:   Number(document.getElementById("f-amount").value),
+    category: document.getElementById("f-category").value,
+    paid:     document.getElementById("f-paid").checked,
+  };
+  if (!body.title || !body.category) {
+    showAddFb("Title and Category are required", "err");
+    return;
+  }
+  document.getElementById("addBtn").disabled = true;
+  const { ok, status, data } = await api("POST", "/api/expenses", body);
+  document.getElementById("addBtn").disabled = false;
+  if (ok) {
+    showAddFb(`✓ Created — ID ${data.id ?? "?"}`, "ok");
+    clearAddForm();
+    await load();
+    toast("Expense added via POST /api/expenses");
+  } else {
+    showAddFb(`Failed — HTTP ${status}: ${errMsg(data)}`, "err");
+  }
+});
+
+// ── HELPERS ───────────────────────────────────────────────────
+function setStatus(s) {
+  const dot = document.getElementById("sdot");
+  const txt = document.getElementById("stxt");
+  if (s === "live")    { dot.className="sdot live"; txt.textContent="interceptor active — /api/expenses live"; }
+  else if(s === "err") { dot.className="sdot err";  txt.textContent="request failed"; }
+  else                 { dot.className="sdot";      txt.textContent="loading…"; }
+}
+
+function showErr(status, data) {
+  const map = {
+    0:   { t:"Network error",    s:"MockDock script tag may not be loaded." },
+    404: { t:"404 Not Found",    s:"Resource /api/expenses not found on MockDock." },
+    410: { t:"410 Gone",         s:"This MockDock namespace has expired (24h TTL)." },
+    401: { t:"401 Unauthorized", s:"Auth is enabled on this environment." },
+  };
+  const m = map[status] || { t:`HTTP ${status}`, s: errMsg(data) };
+  document.getElementById("expenseList").innerHTML = `
+    <div class="state-box">
+      <div class="state-t">${m.t}</div>
+      <div class="state-s">${m.s}</div>
+      <div class="state-c">GET /api/expenses → ${status || "ERR"}</div>
+    </div>`;
+}
+
+function showAddFb(msg, type) {
+  const el = document.getElementById("addFb");
+  el.textContent = msg; el.className = `add-fb ${type}`;
+}
+
+function clearAddForm() {
+  document.getElementById("f-title").value    = "";
+  document.getElementById("f-amount").value   = "";
+  document.getElementById("f-category").value = "";
+  document.getElementById("f-paid").checked   = false;
+}
+
+function addLog(method, path, status, ms) {
+  logs.unshift({ method, path, status, ms });
+  if (logs.length > 10) logs.pop();
+  document.getElementById("logItems").innerHTML = logs.map(l =>
+    `<div class="log-item">
+      <span class="lm lm-${l.method}">${l.method}</span>
+      <span class="lp">${l.path}</span>
+      <span class="ls ${l.status>=400?"ls-err":"ls-ok"}">${l.status||"ERR"}</span>
+      <span class="lt">${l.ms}ms</span>
+    </div>`
+  ).join("");
+}
+
+function errMsg(d) {
+  if (!d) return "no response";
+  if (typeof d === "string") return d;
+  return d.error || d.message || JSON.stringify(d).slice(0, 80);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>

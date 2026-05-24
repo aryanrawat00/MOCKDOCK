@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MockDock — Instant Mock Backend</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:         #F1F3F5;
+      --bg-warm:    #FAF9F6;
+      --card:       #FFFFFF;
+      --txt:        #212529;
+      --txt2:       #757575;
+      --input-bg:   #E9F2F7;
+      --purple:     #9C8DD4;
+      --purple-btn: #A99DD8;
+      --pill-bg:    #E2E1E6;
+      --red:        #E77A73;
+      --green:      #4ADE80;
+      --shadow:     0 4px 12px rgba(0,0,0,0.05);
+      --bor:        rgba(0,0,0,0.06);
+      --f: 'Inter', sans-serif;
+      --m: 'Fira Code', monospace;
+    }
+
+    html { font-size: 14px; scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--f); min-height: 100vh; overflow-x: hidden; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 46px; display: flex; align-items: center; padding: 0 32px; gap: 12px;
+      background: rgba(241,243,245,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--bor);
+    }
+    .logo { font-size: .9rem; font-weight: 700; color: var(--txt); text-decoration: none; }
+    .logo-dot { color: var(--red); }
+    .nav-sep { width: 1px; height: 20px; background: var(--bor); }
+    .nav-tag { font-family: var(--m); font-size: .62rem; color: var(--txt2); background: var(--pill-bg); padding: 3px 10px; border-radius: 100px; }
+    .nav-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .nav-link { font-size: .72rem; color: var(--txt2); text-decoration: none; padding: 5px 12px; border-radius: 100px; transition: all .2s; font-weight: 500; }
+    .nav-link:hover { background: var(--pill-bg); color: var(--txt); }
+    .nav-cta {
+      background: var(--purple-btn); color: #fff; border: none;
+      padding: 6px 16px; border-radius: 100px; font-family: var(--f);
+      font-size: .72rem; font-weight: 600; cursor: pointer; transition: all .25s; text-decoration: none;
+    }
+    .nav-cta:hover { background: #8a7bc7; transform: translateY(-1px); box-shadow: 0 4px 14px rgba(156,141,212,.4); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 80px 32px 60px;
+      background: linear-gradient(160deg, #F1F3F5 0%, #EEF0F8 40%, #F7F6F2 100%);
+      position: relative; overflow: hidden;
+    }
+    .hero-bg-grid {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0.4;
+      background-image:
+        linear-gradient(rgba(156,141,212,.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(156,141,212,.08) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .hero-eyebrow {
+      font-family: var(--m); font-size: .6rem; color: var(--purple);
+      letter-spacing: .12em; text-transform: uppercase; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+      animation: fadeUp .6s ease both;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after { content: '—'; opacity: .4; }
+    .hero-title {
+      font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 300;
+      color: var(--txt); letter-spacing: -.04em; line-height: 1.0;
+      text-align: center; margin-bottom: 10px;
+      animation: fadeUp .6s .1s ease both;
+    }
+    .hero-title strong { font-weight: 700; }
+    .hero-title-dot { color: var(--red); }
+    .hero-sub {
+      font-family: var(--m); font-size: .72rem; color: var(--txt2);
+      letter-spacing: .04em; text-align: center; margin-bottom: 40px;
+      animation: fadeUp .6s .2s ease both;
+    }
+    .hero-3d {
+      width: 340px; height: 280px; position: relative;
+      animation: fadeUp .6s .25s ease both;
+      margin-bottom: 32px;
+    }
+    #canvas-hero { display: block; width: 100%; height: 100%; }
+    .hero-shadow {
+      position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+      width: 180px; height: 24px;
+      background: radial-gradient(ellipse, rgba(156,141,212,.3) 0%, transparent 70%);
+      filter: blur(8px);
+    }
+    .hero-btns {
+      display: flex; gap: 12px; align-items: center;
+      animation: fadeUp .6s .35s ease both;
+    }
+    .btn-hero {
+      background: var(--purple-btn); color: #fff; border: none;
+      padding: 12px 28px; border-radius: 100px; font-family: var(--f);
+      font-weight: 600; font-size: .82rem; cursor: pointer; transition: all .25s;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn-hero:hover { background: #8a7bc7; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(156,141,212,.4); }
+    .btn-hero-ghost {
+      background: transparent; border: 1.5px solid rgba(0,0,0,.12); color: var(--txt2);
+      padding: 11px 24px; border-radius: 100px; font-family: var(--f);
+      font-weight: 500; font-size: .82rem; cursor: pointer; transition: all .25s;
+      text-decoration: none;
+    }
+    .btn-hero-ghost:hover { border-color: var(--purple); color: var(--purple); }
+    .hero-code-pill {
+      margin-top: 36px; font-family: var(--m); font-size: .65rem;
+      color: var(--txt2); background: var(--card); border: 1px solid var(--bor);
+      padding: 8px 18px; border-radius: 100px; letter-spacing: .03em;
+      box-shadow: var(--shadow); animation: fadeUp .6s .45s ease both;
+    }
+    .hero-code-pill span { color: var(--purple); }
+
+    /* ── TICKER ── */
+    .ticker-wrap {
+      overflow: hidden; border-top: 1px solid var(--bor); border-bottom: 1px solid var(--bor);
+      background: var(--bg-warm); padding: 10px 0;
+    }
+    .ticker { display: flex; gap: 0; animation: ticker 28s linear infinite; white-space: nowrap; }
+    .ticker-item {
+      font-family: var(--m); font-size: .6rem; color: var(--txt2); letter-spacing: .06em;
+      padding: 0 32px; border-right: 1px solid var(--bor); text-transform: uppercase;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ticker-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--purple); }
+    @keyframes ticker { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+
+    /* ── SECTIONS ── */
+    section { padding: 100px 32px; max-width: 1200px; margin: 0 auto; }
+    .section-eyebrow {
+      font-family: var(--m); font-size: .58rem; color: var(--purple);
+      letter-spacing: .14em; text-transform: uppercase; margin-bottom: 14px;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 3rem); font-weight: 300;
+      color: var(--txt); letter-spacing: -.03em; line-height: 1.15; margin-bottom: 16px;
+    }
+    .section-sub { font-size: .82rem; color: var(--txt2); line-height: 1.8; max-width: 480px; }
+
+    /* ── HOW IT WORKS ── */
+    .hiw { background: var(--bg); }
+    .hiw-inner { max-width: 1200px; margin: 0 auto; padding: 100px 32px; }
+    .hiw-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: center; margin-top: 60px;
+    }
+    .hiw-steps { display: flex; flex-direction: column; gap: 0; }
+    .hiw-step {
+      display: flex; gap: 20px; padding: 24px 0;
+      border-bottom: 1px solid var(--bor); cursor: pointer;
+      transition: all .2s; position: relative;
+    }
+    .hiw-step:last-child { border-bottom: none; }
+    .hiw-step-num {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(156,141,212,.12); border: 1.5px solid rgba(156,141,212,.25);
+      color: var(--purple); font-family: var(--m); font-size: .65rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; margin-top: 2px;
+      transition: all .3s;
+    }
+    .hiw-step.active .hiw-step-num { background: var(--purple); color: #fff; border-color: var(--purple); }
+    .hiw-step-title { font-size: .88rem; font-weight: 600; color: var(--txt); margin-bottom: 5px; }
+    .hiw-step-desc { font-size: .74rem; color: var(--txt2); line-height: 1.7; }
+    .hiw-step.active .hiw-step-title { color: var(--purple); }
+    .hiw-3d { width: 100%; height: 360px; position: relative; }
+    #canvas-hiw { display: block; width: 100%; height: 100%; }
+
+    /* ── FEATURES ── */
+    .features-wrap { background: linear-gradient(180deg, var(--bg) 0%, var(--bg-warm) 100%); }
+    .features-inner { max-width: 1200px; margin: 0 auto; padding: 100px 32px; }
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 60px; }
+    .feat-card {
+      background: var(--card); border-radius: 16px; border: 1px solid rgba(0,0,0,.04);
+      box-shadow: var(--shadow); padding: 28px 24px; position: relative; overflow: hidden;
+      transition: all .3s; cursor: default;
+    }
+    .feat-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+    .feat-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+      opacity: 0; transition: opacity .3s;
+    }
+    .feat-card:hover::before { opacity: 1; }
+    .feat-3d { width: 80px; height: 80px; margin-bottom: 18px; }
+    .feat-icon { width: 36px; height: 36px; border-radius: 10px; background: rgba(156,141,212,.12); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 1.1rem; }
+    .feat-title { font-size: .88rem; font-weight: 700; color: var(--txt); margin-bottom: 8px; }
+    .feat-desc { font-size: .74rem; color: var(--txt2); line-height: 1.75; }
+    .feat-tag { display: inline-block; font-family: var(--m); font-size: .54rem; color: var(--purple); background: rgba(156,141,212,.1); border: 1px solid rgba(156,141,212,.2); border-radius: 4px; padding: 2px 7px; margin-top: 14px; }
+
+    /* ── CODE PREVIEW ── */
+    .code-section { background: var(--bg-warm); }
+    .code-inner { max-width: 1200px; margin: 0 auto; padding: 100px 32px; }
+    .code-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; margin-top: 60px; }
+    .code-block {
+      background: #1e1e2e; border-radius: 16px; padding: 0; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,.15); position: relative;
+    }
+    .code-bar {
+      background: #2a2a3e; padding: 12px 18px; display: flex; align-items: center; gap: 7px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .code-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .code-dot.r { background: #E77A73; }
+    .code-dot.y { background: #f0c66a; }
+    .code-dot.g { background: #4ADE80; }
+    .code-filename { font-family: var(--m); font-size: .62rem; color: rgba(255,255,255,.3); margin-left: 8px; }
+    .code-body { padding: 20px 22px; font-family: var(--m); font-size: .72rem; line-height: 2; }
+    .c-purple { color: #cba6f7; }
+    .c-blue   { color: #89b4fa; }
+    .c-green  { color: #a6e3a1; }
+    .c-orange { color: #fab387; }
+    .c-red    { color: #f38ba8; }
+    .c-gray   { color: #6c7086; }
+    .c-white  { color: #cdd6f4; }
+    .code-info { display: flex; flex-direction: column; gap: 28px; }
+    .code-feat { display: flex; gap: 16px; }
+    .code-feat-num {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(156,141,212,.12); border: 1px solid rgba(156,141,212,.25);
+      color: var(--purple); font-family: var(--m); font-size: .6rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .code-feat-title { font-size: .82rem; font-weight: 600; color: var(--txt); margin-bottom: 4px; }
+    .code-feat-desc { font-size: .72rem; color: var(--txt2); line-height: 1.7; }
+
+    /* ── STATS ── */
+    .stats-band { background: var(--card); border-top: 1px solid var(--bor); border-bottom: 1px solid var(--bor); }
+    .stats-inner { max-width: 1200px; margin: 0 auto; padding: 60px 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .stat-item { text-align: center; padding: 20px; border-right: 1px solid var(--bor); }
+    .stat-item:last-child { border-right: none; }
+    .stat-big { font-size: 2.8rem; font-weight: 300; color: var(--txt); letter-spacing: -.04em; line-height: 1; margin-bottom: 6px; }
+    .stat-big span { color: var(--purple); }
+    .stat-label { font-family: var(--m); font-size: .54rem; color: var(--txt2); letter-spacing: .1em; text-transform: uppercase; }
+
+    /* ── CTA ── */
+    .cta-section {
+      background: linear-gradient(135deg, #EEF0F8 0%, #F7F6F2 100%);
+      border-top: 1px solid var(--bor); position: relative; overflow: hidden;
+    }
+    .cta-inner { max-width: 1200px; margin: 0 auto; padding: 120px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .cta-3d { width: 100%; height: 320px; position: relative; }
+    #canvas-cta { display: block; width: 100%; height: 100%; }
+    .cta-text .section-title { font-size: clamp(2rem, 4vw, 3.2rem); }
+    .cta-btns { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg); border-top: 1px solid var(--bor);
+      padding: 40px 32px; display: flex; align-items: center; justify-content: space-between;
+      max-width: 100%; flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo { font-size: .9rem; font-weight: 700; color: var(--txt); }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-link { font-size: .72rem; color: var(--txt2); text-decoration: none; transition: color .2s; }
+    .footer-link:hover { color: var(--purple); }
+    .footer-copy { font-family: var(--m); font-size: .58rem; color: var(--txt2); letter-spacing: .04em; }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── FLOATING ORBS bg decoration ── */
+    .orb {
+      position: absolute; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(circle, rgba(156,141,212,.13) 0%, transparent 70%);
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    @keyframes orbFloat {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-20px) scale(1.05); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">MockDock<span class="logo-dot">.</span></a>
+  <div class="nav-sep"></div>
+  <span class="nav-tag">v2.0 beta</span>
+  <div class="nav-right">
+    <a href="#features" class="nav-link">Features</a>
+    <a href="#how" class="nav-link">How it works</a>
+    <a href="#code" class="nav-link">Docs</a>
+    <a href="/app" class="nav-cta">Try Now →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="orb" style="width:500px;height:500px;top:-100px;right:-150px;animation-delay:-3s;"></div>
+  <div class="orb" style="width:300px;height:300px;bottom:80px;left:-80px;animation-delay:-6s;animation-duration:11s;"></div>
+
+  <div class="hero-eyebrow">Mock Backend Builder</div>
+  <div class="hero-title">Build APIs in<br><strong>seconds</strong><span class="hero-title-dot">.</span></div>
+  <div class="hero-sub">// Define schema — Generate endpoints — Ship</div>
+
+  <div class="hero-3d">
+    <canvas id="canvas-hero"></canvas>
+    <div class="hero-shadow"></div>
+  </div>
+
+  <div class="hero-btns">
+    <a href="/app" class="btn-hero">⚡ Try Now — It's Free</a>
+    <a href="#how" class="btn-hero-ghost">See how it works</a>
+  </div>
+
+  <div class="hero-code-pill">
+    <span>POST</span> /api/users → 201 Created &nbsp;·&nbsp; <span>GET</span> /api/products → 200 OK
+  </div>
+</div>
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker">
+    <!-- duplicated for seamless loop -->
+    <div class="ticker-item"><span class="ticker-dot"></span>Zero Config</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>REST Endpoints</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>AI Schema Gen</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Auth Support</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Inline API Tester</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Request Logs</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Instant Deploy</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Share Links</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Zero Config</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>REST Endpoints</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>AI Schema Gen</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Auth Support</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Inline API Tester</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Request Logs</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Instant Deploy</div>
+    <div class="ticker-item"><span class="ticker-dot"></span>Share Links</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="hiw" id="how">
+  <div class="hiw-inner">
+    <div class="section-eyebrow reveal">— Process</div>
+    <div class="section-title reveal">Three steps to a<br>live mock API</div>
+    <div class="hiw-grid">
+      <div class="hiw-steps reveal">
+        <div class="hiw-step active" data-step="0">
+          <div class="hiw-step-num">01</div>
+          <div>
+            <div class="hiw-step-title">Define your namespace</div>
+            <div class="hiw-step-desc">Pick an API slug and configure auth. Your namespace is live instantly — shareable, editable, version-controlled.</div>
+          </div>
+        </div>
+        <div class="hiw-step" data-step="1">
+          <div class="hiw-step-num">02</div>
+          <div>
+            <div class="hiw-step-title">Add resources & schema</div>
+            <div class="hiw-step-desc">Describe your data model in plain English. Our AI generates the JSON schema and seeds realistic mock records automatically.</div>
+          </div>
+        </div>
+        <div class="hiw-step" data-step="2">
+          <div class="hiw-step-num">03</div>
+          <div>
+            <div class="hiw-step-title">Hit your endpoints</div>
+            <div class="hiw-step-desc">Full CRUD REST endpoints — GET, POST, PUT, DELETE — ready to consume from any frontend, app, or Postman collection.</div>
+          </div>
+        </div>
+      </div>
+      <div class="hiw-3d reveal">
+        <canvas id="canvas-hiw"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-band">
+  <div class="stats-inner">
+    <div class="stat-item reveal">
+      <div class="stat-big"><span>∞</span></div>
+      <div class="stat-label">Endpoints per API</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-big">0<span>s</span></div>
+      <div class="stat-label">Setup Time</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-big">5<span>+</span></div>
+      <div class="stat-label">HTTP Methods</div>
+    </div>
+    <div class="stat-item reveal">
+      <div class="stat-big">1<span>click</span></div>
+      <div class="stat-label">Deploy & Share</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features-wrap" id="features">
+  <div class="features-inner">
+    <div class="section-eyebrow reveal">— Features</div>
+    <div class="section-title reveal">Everything you need<br>to move fast</div>
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-icon">⚡</div>
+        <div class="feat-title">Instant Endpoints</div>
+        <div class="feat-desc">Full REST CRUD routes generated the moment you save a resource. No boilerplate, no config files, no servers to spin up.</div>
+        <div class="feat-tag">GET · POST · PUT · DELETE</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🤖</div>
+        <div class="feat-title">AI Schema Generator</div>
+        <div class="feat-desc">Describe your data in plain English. MockDock's AI writes the JSON schema and seeds realistic records — names, emails, dates and all.</div>
+        <div class="feat-tag">Powered by Claude</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🔐</div>
+        <div class="feat-title">Auth Simulation</div>
+        <div class="feat-desc">Enable token-based auth on any route. Simulate login flows, protected endpoints, and ownership without writing a single line of auth code.</div>
+        <div class="feat-tag">Bearer Token Auth</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🧪</div>
+        <div class="feat-title">Inline API Tester</div>
+        <div class="feat-desc">Test every endpoint right inside the dashboard. Send requests, inspect responses, and view live request logs — all without leaving the page.</div>
+        <div class="feat-tag">Live Request Logs</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">🔗</div>
+        <div class="feat-title">Shareable APIs</div>
+        <div class="feat-desc">Generate a public share link for your mock API. Hand it to teammates, clients, or QA — anyone can hit the endpoints from anywhere.</div>
+        <div class="feat-tag">Public · Private modes</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-icon">📦</div>
+        <div class="feat-title">Seed & Scaffold</div>
+        <div class="feat-desc">Auto-populate your resources with realistic mock data. Iterate on your schema, re-seed in one click, and never manually create test data again.</div>
+        <div class="feat-tag">Realistic Mock Data</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CODE SECTION -->
+<div class="code-section" id="code">
+  <div class="code-inner">
+    <div class="section-eyebrow reveal">— Developer Experience</div>
+    <div class="section-title reveal">Copy. Paste. Ship.</div>
+    <div class="code-grid">
+      <div class="code-block reveal">
+        <div class="code-bar">
+          <div class="code-dot r"></div>
+          <div class="code-dot y"></div>
+          <div class="code-dot g"></div>
+          <span class="code-filename">fetch-example.js</span>
+        </div>
+        <div class="code-body">
+          <div><span class="c-gray">// Fetch all users from your mock API</span></div>
+          <div><span class="c-purple">const</span> <span class="c-blue">response</span> <span class="c-white">= </span><span class="c-purple">await</span> <span class="c-blue">fetch</span><span class="c-white">(</span></div>
+          <div>&nbsp;&nbsp;<span class="c-green">`https://mockdock.dev/api/<span class="c-orange">my-api</span>/users`</span></div>
+          <div><span class="c-white">);</span></div>
+          <div>&nbsp;</div>
+          <div><span class="c-purple">const</span> <span class="c-blue">users</span> <span class="c-white">= </span><span class="c-purple">await</span> <span class="c-blue">response</span><span class="c-white">.</span><span class="c-blue">json</span><span class="c-white">();</span></div>
+          <div>&nbsp;</div>
+          <div><span class="c-gray">// POST a new record</span></div>
+          <div><span class="c-purple">await</span> <span class="c-blue">fetch</span><span class="c-white">(url, {</span></div>
+          <div>&nbsp;&nbsp;<span class="c-blue">method</span><span class="c-white">: </span><span class="c-green">'POST'</span><span class="c-white">,</span></div>
+          <div>&nbsp;&nbsp;<span class="c-blue">body</span><span class="c-white">: </span><span class="c-blue">JSON</span><span class="c-white">.</span><span class="c-blue">stringify</span><span class="c-white">({ </span><span class="c-orange">name</span><span class="c-white">: </span><span class="c-green">'Alice'</span> <span class="c-white">}),</span></div>
+          <div><span class="c-white">});</span></div>
+          <div>&nbsp;</div>
+          <div><span class="c-gray">// → 201 Created ✓</span></div>
+        </div>
+      </div>
+      <div class="code-info reveal">
+        <div class="code-feat">
+          <div class="code-feat-num">01</div>
+          <div>
+            <div class="code-feat-title">Script tag embed</div>
+            <div class="code-feat-desc">Drop a single script tag into any HTML page. MockDock auto-patches fetch calls — no SDK, no config.</div>
+          </div>
+        </div>
+        <div class="code-feat">
+          <div class="code-feat-num">02</div>
+          <div>
+            <div class="code-feat-title">Standard REST responses</div>
+            <div class="code-feat-desc">Every endpoint returns proper HTTP status codes, JSON bodies, and CORS headers out of the box.</div>
+          </div>
+        </div>
+        <div class="code-feat">
+          <div class="code-feat-num">03</div>
+          <div>
+            <div class="code-feat-title">Session-safe records</div>
+            <div class="code-feat-desc">Records persist for your session. Reset, re-seed, or share your state with a token-protected share link.</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <a href="/app" class="btn-hero" style="display:inline-flex;">Start Building →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-text reveal">
+      <div class="section-eyebrow">— Get started</div>
+      <div class="section-title" style="max-width:440px;">Your mock API is<br>one click away<span style="color:var(--red)">.</span></div>
+      <div class="section-sub">No account needed. No credit card. Define a namespace, add resources, and start hitting real endpoints in under 60 seconds.</div>
+      <div class="cta-btns">
+        <a href="/app" class="btn-hero">⚡ Try Now — Free</a>
+        <a href="#features" class="btn-hero-ghost">Learn more</a>
+      </div>
+    </div>
+    <div class="cta-3d reveal">
+      <canvas id="canvas-cta"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">MockDock<span style="color:var(--red)">.</span></div>
+  <div class="footer-links">
+    <a href="#" class="footer-link">Docs</a>
+    <a href="#features" class="footer-link">Features</a>
+    <a href="#how" class="footer-link">How it works</a>
+    <a href="/app" class="footer-link">App</a>
+  </div>
+  <div class="footer-copy">© 2025 MockDock · Built for developers</div>
+</footer>
+
+<!-- THREE.JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── Shared helpers ──────────────────────────────────────────────
+function makeRenderer(canvas, w, h) {
+  var r = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+  r.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  r.setSize(w, h);
+  return r;
+}
+function makeScene() {
+  var s = new THREE.Scene();
+  s.add(new THREE.AmbientLight(0xffffff, 0.45));
+  var d = new THREE.DirectionalLight(0xffffff, 1.1); d.position.set(4, 7, 5); s.add(d);
+  var p = new THREE.PointLight(0x9C8DD4, 2.2, 14); p.position.set(-3, 3, 4); s.add(p);
+  var r = new THREE.PointLight(0xE2D9FF, 0.9, 10); r.position.set(3, -2, 3); s.add(r);
+  return s;
+}
+var purpleMat  = function(op) { return new THREE.MeshPhysicalMaterial({ color:0x9C8DD4, metalness:0.12, roughness:0.08, transmission:0.5, thickness:1.2, clearcoat:1, clearcoatRoughness:0.05, transparent:true, opacity: op||0.9 }); };
+var wireMat    = function() { return new THREE.MeshBasicMaterial({ color:0xC4B8F0, wireframe:true, transparent:true, opacity:0.16 }); };
+var ringMatFn  = function() { return new THREE.MeshPhysicalMaterial({ color:0xB8ACEC, metalness:0.7, roughness:0.1, transparent:true, opacity:0.65 }); };
+var dotMatFn   = function() { return new THREE.MeshPhysicalMaterial({ color:0xE8E0FF, metalness:0.6, roughness:0.1 }); };
+
+// ── HERO canvas ─────────────────────────────────────────────────
+(function heroScene() {
+  var el = document.getElementById('canvas-hero');
+  var W = el.parentElement.offsetWidth || 340;
+  var H = el.parentElement.offsetHeight || 280;
+  el.width = W; el.height = H;
+  var renderer = makeRenderer(el, W, H);
+  var scene = makeScene();
+  var camera = new THREE.PerspectiveCamera(36, W/H, 0.1, 100);
+  camera.position.set(0, 0.3, 5.5);
+
+  var group = new THREE.Group(); scene.add(group);
+
+  // Main icosahedron
+  var mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 1), purpleMat(0.88));
+  group.add(mesh);
+  group.add(new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), wireMat()));
+
+  // Two rings at different angles
+  var ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.035, 16, 90), ringMatFn());
+  ring1.rotation.x = Math.PI/2.5; ring1.rotation.z = 0.3; group.add(ring1);
+  var ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.02, 16, 90), new THREE.MeshBasicMaterial({ color:0xC4B8F0, transparent:true, opacity:0.2, wireframe:false }));
+  ring2.rotation.x = Math.PI/3.5; ring2.rotation.y = 0.8; group.add(ring2);
+
+  // Orbiting dots
+  var dot1 = new THREE.Mesh(new THREE.SphereGeometry(0.13,16,16), dotMatFn()); group.add(dot1);
+  var dot2 = new THREE.Mesh(new THREE.SphereGeometry(0.08,16,16), dotMatFn()); group.add(dot2);
+
+  // Small satellite cubes
+  var cubeGeo = new THREE.BoxGeometry(0.18, 0.18, 0.18);
+  var cubeMat = new THREE.MeshPhysicalMaterial({ color:0x9C8DD4, metalness:0.4, roughness:0.2, transparent:true, opacity:0.7 });
+  var cube1 = new THREE.Mesh(cubeGeo, cubeMat); group.add(cube1);
+  var cube2 = new THREE.Mesh(cubeGeo, cubeMat); group.add(cube2);
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.28;
+    group.rotation.x = Math.sin(t * 0.35) * 0.15;
+    group.position.y = Math.sin(t * 0.6) * 0.1;
+    dot1.position.set(Math.cos(t*1.0)*1.75, Math.sin(t*0.8)*0.5, Math.sin(t*1.0)*1.75);
+    dot2.position.set(Math.cos(t*0.7+2)*1.95, Math.sin(t*1.1)*0.3, Math.sin(t*0.7+2)*1.95);
+    cube1.position.set(Math.cos(t*0.9+1)*2.1, Math.sin(t*0.6)*0.6, Math.sin(t*0.9+1)*2.1);
+    cube1.rotation.set(t,t*0.7,0);
+    cube2.position.set(Math.cos(t*0.5+3)*2.3, Math.sin(t*0.9+1)*0.8, Math.sin(t*0.5+3)*2.3);
+    cube2.rotation.set(t*0.8,t,0);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Mouse parallax
+  document.addEventListener('mousemove', function(e) {
+    var cx = (e.clientX / window.innerWidth  - 0.5) * 0.4;
+    var cy = (e.clientY / window.innerHeight - 0.5) * 0.4;
+    group.rotation.y += (cx - group.rotation.y) * 0.04;
+  });
+})();
+
+// ── HOW IT WORKS canvas ─────────────────────────────────────────
+(function hiwScene() {
+  var el = document.getElementById('canvas-hiw');
+  var W = el.parentElement.offsetWidth || 400;
+  var H = 360;
+  el.width = W; el.height = H;
+  var renderer = makeRenderer(el, W, H);
+  var scene = makeScene();
+  var camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
+  camera.position.set(0, 0, 5);
+
+  var group = new THREE.Group(); scene.add(group);
+
+  // Stack of 3 geometric shapes representing the 3 steps
+  var shapes = [];
+
+  // Step 1: Cube (namespace)
+  var g1 = new THREE.BoxGeometry(1, 1, 1);
+  var m1 = new THREE.Mesh(g1, purpleMat(0.85));
+  m1.position.set(-1.4, 0, 0); group.add(m1);
+  m1.add(new THREE.Mesh(new THREE.BoxGeometry(1.08,1.08,1.08), wireMat()));
+  shapes.push(m1);
+
+  // Step 2: Octahedron (schema)
+  var g2 = new THREE.OctahedronGeometry(0.75, 0);
+  var m2 = new THREE.Mesh(g2, purpleMat(0.85));
+  m2.position.set(0, 0, 0); group.add(m2);
+  m2.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.85,0), wireMat()));
+  shapes.push(m2);
+
+  // Step 3: Icosahedron (endpoints)
+  var g3 = new THREE.IcosahedronGeometry(0.75, 1);
+  var m3 = new THREE.Mesh(g3, purpleMat(0.85));
+  m3.position.set(1.4, 0, 0); group.add(m3);
+  m3.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.85,1), wireMat()));
+  shapes.push(m3);
+
+  // Connecting lines (particles)
+  var pts = [new THREE.Vector3(-1.4,0,0), new THREE.Vector3(0,0,0), new THREE.Vector3(1.4,0,0)];
+  var lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+  var line = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color:0x9C8DD4, transparent:true, opacity:0.3 }));
+  group.add(line);
+
+  // Active step highlight
+  var steps = document.querySelectorAll('.hiw-step');
+  var activeStep = 0;
+  steps.forEach(function(el, i) {
+    el.addEventListener('click', function() {
+      steps.forEach(function(s){ s.classList.remove('active'); });
+      el.classList.add('active');
+      activeStep = i;
+    });
+  });
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.2;
+    shapes.forEach(function(s, i) {
+      s.rotation.x = t * (0.3 + i*0.1);
+      s.rotation.z = t * (0.2 + i*0.08);
+      var isActive = i === activeStep;
+      s.scale.setScalar(isActive ? 1.15 + Math.sin(t*2)*0.05 : 1.0);
+      s.material.opacity = isActive ? 1.0 : 0.6;
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ── CTA canvas ──────────────────────────────────────────────────
+(function ctaScene() {
+  var el = document.getElementById('canvas-cta');
+  var W = el.parentElement.offsetWidth || 400;
+  var H = 320;
+  el.width = W; el.height = H;
+  var renderer = makeRenderer(el, W, H);
+  var scene = makeScene();
+  var camera = new THREE.PerspectiveCamera(40, W/H, 0.1, 100);
+  camera.position.set(0, 0, 6);
+
+  var group = new THREE.Group(); scene.add(group);
+
+  // Central torus knot
+  var knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1, 0.3, 128, 16, 2, 3),
+    new THREE.MeshPhysicalMaterial({ color:0x9C8DD4, metalness:0.1, roughness:0.05, transmission:0.4, thickness:1.5, clearcoat:1, clearcoatRoughness:0.04, transparent:true, opacity:0.85 })
+  );
+  group.add(knot);
+
+  // Outer orbit ring
+  var outerRing = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.025, 12, 100), ringMatFn());
+  outerRing.rotation.x = Math.PI/4; group.add(outerRing);
+
+  // Orbiting small spheres
+  var orbiters = [];
+  for (var i=0; i<4; i++) {
+    var s = new THREE.Mesh(new THREE.SphereGeometry(0.1,12,12), dotMatFn());
+    group.add(s); orbiters.push({ mesh:s, offset: i * Math.PI/2 });
+  }
+
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var t = clock.getElapsedTime();
+    group.rotation.y = t * 0.22;
+    group.rotation.x = Math.sin(t*0.3)*0.15;
+    group.position.y = Math.sin(t*0.5)*0.12;
+    knot.rotation.z = t * 0.18;
+    orbiters.forEach(function(o) {
+      o.mesh.position.set(Math.cos(t*0.8 + o.offset)*2.2, Math.sin(t*0.6 + o.offset)*0.5, Math.sin(t*0.8 + o.offset)*2.2);
+    });
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+// ── Scroll reveal ───────────────────────────────────────────────
+(function() {
+  var els = document.querySelectorAll('.reveal');
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e, i) {
+      if (e.isIntersecting) {
+        setTimeout(function() { e.target.classList.add('visible'); }, 60);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  els.forEach(function(el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>
